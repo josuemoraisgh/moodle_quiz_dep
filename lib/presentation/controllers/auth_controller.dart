@@ -3,11 +3,11 @@ import 'package:flutter/foundation.dart';
 import '../../domain/entities/app_settings_entity.dart';
 import '../../domain/entities/local_user_entity.dart';
 import '../../domain/entities/student_entity.dart';
-import '../../domain/repositories/i_local_auth_repository.dart';
+import '../../domain/repositories/i_quiz_auth_repository.dart';
 
 /// Gerencia autenticação local – sem Moodle ou internet.
 class AuthController extends ChangeNotifier {
-  final ILocalAuthRepository _repo;
+  final IQuizAuthRepository _repo;
 
   LocalUserEntity? _user;
   AppSettingsEntity _settings = AppSettingsEntity.defaults();
@@ -23,6 +23,8 @@ class AuthController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isLoggedIn => _user != null;
+  bool get requiresSetup => _repo.supportsLocalSetup && _settings.isFirstRun;
+  bool get isOnlineMode => !_repo.supportsLocalSetup;
 
   /// Inicialização: carrega configurações, lista de alunos e sessão salva.
   Future<void> init() async {
@@ -32,11 +34,19 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> login({required String name, required String password}) async {
+  Future<void> login({
+    required String name,
+    required String password,
+    String? baseUrl,
+  }) async {
     _setLoading(true);
     _error = null;
     try {
-      final user = await _repo.login(name: name, password: password);
+      final user = await _repo.login(
+        name: name,
+        password: password,
+        baseUrl: baseUrl,
+      );
       if (user == null) {
         _error = 'Usuário ou senha incorretos.';
       } else {

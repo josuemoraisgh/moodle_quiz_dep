@@ -2,22 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/config/quiz_runtime_config.dart';
 import '../../core/services/quiz_state_service.dart';
-import '../../core/utils/moodle_xml_quiz_parser.dart';
-import '../../data/datasources/offline_local_server.dart';
-import '../../data/repositories/local_quiz_repository_impl.dart';
 import '../../domain/entities/local_quiz_entity.dart';
 import '../../domain/entities/local_user_entity.dart';
 import '../../domain/entities/question_entity.dart';
 import '../../domain/entities/quiz_state_entity.dart';
 import '../../domain/entities/score_entity.dart';
 import '../../domain/entities/student_entity.dart';
+import '../../domain/repositories/i_quiz_runtime_repository.dart';
+import '../../domain/services/quiz_sync_server.dart';
 
 /// Gerencia o painel do professor – controle do quiz sem rede externa.
 class ProfessorController extends ChangeNotifier {
-  final LocalQuizRepository _quizRepo;
+  final IQuizRuntimeRepository _quizRepo;
   final QuizStateService _stateService;
-  final OfflineLocalServer _server;
+  final QuizSyncServer _server;
+  final QuestionNavigationMode navigationMode;
 
   List<LocalQuizEntity> _quizzes = [];
   LocalQuizEntity? _selectedQuiz;
@@ -37,9 +38,10 @@ class ProfessorController extends ChangeNotifier {
   bool _isRefreshingScores = false;
 
   ProfessorController({
-    required LocalQuizRepository quizRepo,
+    required IQuizRuntimeRepository quizRepo,
     required QuizStateService stateService,
-    required OfflineLocalServer server,
+    required QuizSyncServer server,
+    this.navigationMode = QuestionNavigationMode.list,
   })  : _quizRepo = quizRepo,
         _stateService = stateService,
         _server = server;
@@ -58,7 +60,13 @@ class ProfessorController extends ChangeNotifier {
   List<String> get log => List.unmodifiable(_log);
   bool get isSetup => _selectedQuiz != null && questions.isNotEmpty;
   int get selectedQuestionIndex => _selectedQuestionIndex;
-  bool get showQuestionThumbnails => _showQuestionThumbnails;
+  bool get showQuestionThumbnails =>
+      navigationMode == QuestionNavigationMode.list || _showQuestionThumbnails;
+  bool get isListNavigation => navigationMode == QuestionNavigationMode.list;
+  bool get isSingleQuestionNavigation =>
+      navigationMode == QuestionNavigationMode.single;
+  bool get supportsImport => _quizRepo.supportsImport;
+  bool get supportsDelete => _quizRepo.supportsDelete;
   int? get revealQuestionSlot => _revealQuestionSlot;
   String get serverUrl => _server.serverUrl;
   bool get serverRunning => _server.isRunning;
@@ -68,6 +76,7 @@ class ProfessorController extends ChangeNotifier {
   Future<void> init(LocalUserEntity user) async {
     _setLoading(true);
     try {
+      await _quizRepo.initialize(user);
       _quizzes = await _quizRepo.loadQuizzes();
       _students = await _quizRepo.loadStudents();
       _bindServerCallbacks();
@@ -114,7 +123,8 @@ class ProfessorController extends ChangeNotifier {
       _stateService.updateState(state: state);
       final scores = await _quizRepo.loadScores();
       _stateService.updateScores(scores);
-      _addLog('Quiz "${loaded.name}" carregado (${loaded.questions.length} questões).');
+      _addLog(
+          'Quiz "${loaded.name}" carregado (${loaded.questions.length} questões).');
       _startScorePolling();
     } catch (e) {
       _error = e.toString();
@@ -125,6 +135,7 @@ class ProfessorController extends ChangeNotifier {
   }
 
   Future<void> deleteQuiz(int quizId) async {
+    if (!_quizRepo.supportsDelete) return;
     _setLoading(true);
     try {
       await _quizRepo.deleteQuiz(quizId);
@@ -150,17 +161,13 @@ class ProfessorController extends ChangeNotifier {
     _error = null;
     _log = [];
     try {
+      if (!_quizRepo.supportsImport) {
+        throw UnsupportedError('Importacao XML indisponivel neste modo.');
+      }
       _addLog('Importando "$fileName"…');
-      final questions = MoodleXmlQuizParser.parseQuestions(
-        bytes,
-        token: '',
-        baseUrl: '',
-        onLog: _addLog,
-      );
-      if (questions.isEmpty) throw Exception('Nenhuma questão encontrada no XML.');
-      final quiz = await _quizRepo.saveQuiz(fileName, questions);
+      final quiz = await _quizRepo.importFromXml(bytes, fileName);
       _quizzes = await _quizRepo.loadQuizzes();
-      _addLog('Importado: ${questions.length} questão(ões) salvas.');
+      _addLog('Importado: ${quiz.totalQuestions} questão(ões) salvas.');
       await selectQuiz(quiz);
     } catch (e) {
       _error = e.toString();
@@ -206,8 +213,7 @@ class ProfessorController extends ChangeNotifier {
   Future<void> extendQuestion(int extraSeconds) async {
     final state = quizState;
     if (!state.isActive) return;
-    final remaining =
-        state.endsAt?.difference(DateTime.now()).inSeconds ?? 0;
+    final remaining = state.endsAt?.difference(DateTime.now()).inSeconds ?? 0;
     final newDuration = (remaining < 0 ? 0 : remaining) + extraSeconds;
     final now = DateTime.now();
     final newState = QuizStateEntity(
@@ -311,8 +317,7 @@ class ProfessorController extends ChangeNotifier {
   }
 
   bool Function(ScoreEntity) _answeredCurrentRound(QuizStateEntity state) {
-    return (s) =>
-        s.answeredPageRounds[state.currentPage] == state.roundId;
+    return (s) => s.answeredPageRounds[state.currentPage] == state.roundId;
   }
 
   Future<void> _startTimer(QuizStateEntity state) async {
@@ -355,6 +360,7 @@ class ProfessorController extends ChangeNotifier {
   }
 
   void setShowQuestionThumbnails(bool value) {
+    if (navigationMode == QuestionNavigationMode.list) return;
     _showQuestionThumbnails = value;
     notifyListeners();
   }

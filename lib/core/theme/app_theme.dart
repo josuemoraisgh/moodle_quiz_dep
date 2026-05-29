@@ -86,8 +86,8 @@ abstract class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-              color: primary.withValues(alpha: 0.4), width: 1.5),
+          borderSide:
+              BorderSide(color: primary.withValues(alpha: 0.4), width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

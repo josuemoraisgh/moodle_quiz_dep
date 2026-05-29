@@ -5,7 +5,8 @@ import 'package:moodle_quiz_dep/core/utils/moodle_xml_quiz_parser.dart';
 
 void main() {
   test('parses Moodle XML export into the shared question engine model', () {
-    final bytes = File('questoes_erros_incertezas_moodle.xml').readAsBytesSync();
+    final bytes =
+        File('questoes_erros_incertezas_moodle.xml').readAsBytesSync();
 
     final questions = MoodleXmlQuizParser.parseQuestions(bytes);
 

@@ -18,7 +18,9 @@ Future<String?> getLocalIp() async {
     // 1. Prefere interface com "eth" no nome (Ethernet via adaptador USB-C)
     for (final iface in interfaces) {
       final name = iface.name.toLowerCase();
-      if (name.contains('eth') || name.contains('usb') || name.contains('rndis')) {
+      if (name.contains('eth') ||
+          name.contains('usb') ||
+          name.contains('rndis')) {
         for (final addr in iface.addresses) {
           if (!addr.isLoopback) return addr.address;
         }
@@ -28,7 +30,9 @@ Future<String?> getLocalIp() async {
     // 2. Fallback: Wi-Fi (wlan)
     for (final iface in interfaces) {
       final name = iface.name.toLowerCase();
-      if (name.contains('wlan') || name.contains('wifi') || name.contains('wi-fi')) {
+      if (name.contains('wlan') ||
+          name.contains('wifi') ||
+          name.contains('wi-fi')) {
         for (final addr in iface.addresses) {
           if (!addr.isLoopback) return addr.address;
         }

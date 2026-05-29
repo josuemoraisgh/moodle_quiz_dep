@@ -25,11 +25,9 @@ class ScoreEntity extends Equatable {
   });
 
   /// Indica se subiu no ranking em relação à rodada anterior.
-  bool get movedUp =>
-      previousRank != null && rank < previousRank!;
+  bool get movedUp => previousRank != null && rank < previousRank!;
 
-  bool get movedDown =>
-      previousRank != null && rank > previousRank!;
+  bool get movedDown => previousRank != null && rank > previousRank!;
 
   String get initials {
     final parts = studentName.trim().split(' ');

@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -59,7 +58,10 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
       setState(() => _error = 'Informe a senha dos alunos.');
       return;
     }
-    setState(() {_saving = true; _error = null;});
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
       final auth = context.read<AuthController>();
       await auth.saveSettings(AppSettingsEntity(
@@ -80,16 +82,41 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
     }
   }
 
-  Future<void> _importStudentsFromFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['txt', 'csv'],
-      withData: true,
+  Future<void> _importStudentsFromTextDialog() async {
+    final controller = TextEditingController();
+    final raw = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppTheme.bgCard,
+        title: const Text(
+          'Importar alunos',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
+        content: TextField(
+          controller: controller,
+          minLines: 8,
+          maxLines: 16,
+          style: const TextStyle(color: AppTheme.textPrimary),
+          decoration: const InputDecoration(
+            hintText:
+                'Cole nomes separados por linha, virgula ou ponto e virgula',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('Importar'),
+          ),
+        ],
+      ),
     );
-    if (result == null || result.files.isEmpty) return;
-    final bytes = result.files.first.bytes;
-    if (bytes == null) return;
-    final lines = String.fromCharCodes(bytes)
+    if (raw == null || raw.trim().isEmpty) return;
+
+    final lines = raw
         .split(RegExp(r'[\n,;]+'))
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
@@ -116,8 +143,7 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
     });
   }
 
-  void _removeStudent(int index) =>
-      setState(() => _students.removeAt(index));
+  void _removeStudent(int index) => setState(() => _students.removeAt(index));
 
   @override
   void dispose() {
@@ -150,7 +176,8 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
                           Row(
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                                icon: const Icon(
+                                    Icons.arrow_back_ios_new_rounded,
                                     color: AppTheme.textSecondary),
                                 onPressed: () => context.go(AppRouter.login),
                               ),
@@ -172,13 +199,13 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
                             icon: Icons.quiz_rounded,
                             child: TextFormField(
                               controller: _titleCtrl,
-                              style: const TextStyle(
-                                  color: AppTheme.textPrimary),
+                              style:
+                                  const TextStyle(color: AppTheme.textPrimary),
                               decoration: const InputDecoration(
                                 labelText: 'Título exibido na tela',
                                 hintText: 'Quiz Presencial',
-                                hintStyle: TextStyle(
-                                    color: AppTheme.textSecondary),
+                                hintStyle:
+                                    TextStyle(color: AppTheme.textSecondary),
                               ),
                             ),
                           ),
@@ -216,7 +243,8 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
                                       color: AppTheme.textPrimary),
                                   decoration: InputDecoration(
                                     labelText: 'Senha dos alunos (única)',
-                                    prefixIcon: const Icon(Icons.group_outlined),
+                                    prefixIcon:
+                                        const Icon(Icons.group_outlined),
                                     suffixIcon: IconButton(
                                       icon: Icon(_obscureStudent
                                           ? Icons.visibility_off
@@ -236,9 +264,9 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
                             title: 'Lista de Alunos (${_students.length})',
                             icon: Icons.people_outline,
                             trailing: TextButton.icon(
-                              onPressed: _importStudentsFromFile,
+                              onPressed: _importStudentsFromTextDialog,
                               icon: const Icon(Icons.upload_file, size: 16),
-                              label: const Text('Importar .txt/.csv'),
+                              label: const Text('Importar texto'),
                               style: TextButton.styleFrom(
                                   foregroundColor: AppTheme.accent),
                             ),
@@ -258,8 +286,7 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
                                           hintStyle: TextStyle(
                                               color: AppTheme.textSecondary),
                                         ),
-                                        onFieldSubmitted: (_) =>
-                                            _addStudent(),
+                                        onFieldSubmitted: (_) => _addStudent(),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -284,9 +311,8 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
                                           const EdgeInsets.symmetric(
                                               horizontal: 4),
                                       leading: CircleAvatar(
-                                        backgroundColor:
-                                            AppTheme.primary.withValues(
-                                                alpha: 0.15),
+                                        backgroundColor: AppTheme.primary
+                                            .withValues(alpha: 0.15),
                                         child: Text(
                                           '${i + 1}',
                                           style: const TextStyle(
@@ -300,10 +326,8 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
                                               color: AppTheme.textPrimary,
                                               fontSize: 14)),
                                       trailing: IconButton(
-                                        icon: const Icon(
-                                            Icons.delete_outline,
-                                            color: AppTheme.danger,
-                                            size: 20),
+                                        icon: const Icon(Icons.delete_outline,
+                                            color: AppTheme.danger, size: 20),
                                         onPressed: () => _removeStudent(i),
                                       ),
                                     ),
@@ -322,8 +346,8 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
                                 color: AppTheme.danger.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                    color: AppTheme.danger.withValues(
-                                        alpha: 0.4)),
+                                    color:
+                                        AppTheme.danger.withValues(alpha: 0.4)),
                               ),
                               child: Text(_error!,
                                   style: const TextStyle(

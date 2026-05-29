@@ -5,15 +5,35 @@ class LocalUserEntity extends Equatable {
   final int id;
   final String name;
   final bool isTeacher;
+  final String username;
+  final String token;
+  final String baseUrl;
+  final int courseId;
+  final Set<String> availableFunctions;
 
   const LocalUserEntity({
     required this.id,
     required this.name,
     required this.isTeacher,
+    this.username = '',
+    this.token = '',
+    this.baseUrl = '',
+    this.courseId = 0,
+    this.availableFunctions = const {},
   });
 
   String get fullname => name;
+  bool get isOnlineUser => token.isNotEmpty && baseUrl.isNotEmpty;
 
   @override
-  List<Object?> get props => [id, name, isTeacher];
+  List<Object?> get props => [
+        id,
+        name,
+        isTeacher,
+        username,
+        token,
+        baseUrl,
+        courseId,
+        availableFunctions,
+      ];
 }

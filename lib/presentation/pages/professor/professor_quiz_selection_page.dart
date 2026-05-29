@@ -1,4 +1,6 @@
-import 'package:file_picker/file_picker.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -33,17 +35,65 @@ class _ProfessorQuizSelectionPageState
   }
 
   Future<void> _importXml(ProfessorController prof) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['xml'],
-      withData: true,
+    final nameCtrl = TextEditingController(text: 'quiz_importado.xml');
+    final xmlCtrl = TextEditingController();
+
+    final payload = await showDialog<(String, String)>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppTheme.bgCard,
+        title: const Text(
+          'Importar XML Moodle',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
+        content: SizedBox(
+          width: 560,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                decoration: const InputDecoration(labelText: 'Nome do arquivo'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: xmlCtrl,
+                minLines: 10,
+                maxLines: 20,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                decoration: const InputDecoration(
+                  labelText: 'Conteudo XML',
+                  hintText: 'Cole aqui o XML exportado do Moodle',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(
+              context,
+              (nameCtrl.text.trim(), xmlCtrl.text),
+            ),
+            child: const Text('Importar'),
+          ),
+        ],
+      ),
     );
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    if (file.bytes == null) return;
+    if (payload == null) return;
+
+    final fileName = payload.$1.isEmpty ? 'quiz_importado.xml' : payload.$1;
+    final xmlText = payload.$2.trim();
+    if (xmlText.isEmpty) return;
+
     await prof.importFromXml(
-      bytes: file.bytes!,
-      fileName: file.name,
+      bytes: Uint8List.fromList(utf8.encode(xmlText)),
+      fileName: fileName,
     );
     if (!mounted) return;
     if (prof.error == null) context.go(AppRouter.professor);
@@ -71,8 +121,7 @@ class _ProfessorQuizSelectionPageState
               onPressed: () => Navigator.pop(context, false),
               child: const Text('Cancelar')),
           ElevatedButton(
-            style:
-                ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Excluir'),
           ),
@@ -144,27 +193,27 @@ class _ProfessorQuizSelectionPageState
                       ),
 
                       // ── Importar XML ────────────────────────────────────
-                      Padding(
-                        padding: Responsive.horizontalPadding(context),
-                        child: ElevatedButton.icon(
-                          onPressed: prof.isLoading
-                              ? null
-                              : () => _importXml(prof),
-                          icon: prof.isLoading
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                      color: Colors.white, strokeWidth: 2))
-                              : const Icon(Icons.upload_file_rounded),
-                          label: const Text('Importar Quiz (XML Moodle)'),
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(double.infinity, 52),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                      if (prof.supportsImport)
+                        Padding(
+                          padding: Responsive.horizontalPadding(context),
+                          child: ElevatedButton.icon(
+                            onPressed:
+                                prof.isLoading ? null : () => _importXml(prof),
+                            icon: prof.isLoading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white, strokeWidth: 2))
+                                : const Icon(Icons.upload_file_rounded),
+                            label: const Text('Importar Quiz (XML Moodle)'),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(double.infinity, 52),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
                           ),
                         ),
-                      ),
 
                       // ── Erro ────────────────────────────────────────────
                       if (prof.error != null)
@@ -177,8 +226,8 @@ class _ProfessorQuizSelectionPageState
                               color: AppTheme.danger.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                  color: AppTheme.danger.withValues(
-                                      alpha: 0.4)),
+                                  color:
+                                      AppTheme.danger.withValues(alpha: 0.4)),
                             ),
                             child: Text(prof.error!,
                                 style: const TextStyle(
@@ -217,10 +266,9 @@ class _ProfessorQuizSelectionPageState
                                   final quiz = prof.quizzes[i];
                                   return _QuizCard(
                                     quiz: quiz,
-                                    onSelect: () =>
-                                        _selectQuiz(prof, quiz),
-                                    onDelete: () =>
-                                        _deleteQuiz(prof, quiz),
+                                    onSelect: () => _selectQuiz(prof, quiz),
+                                    onDelete: () => _deleteQuiz(prof, quiz),
+                                    canDelete: prof.supportsDelete,
                                   );
                                 },
                               ),
@@ -241,11 +289,13 @@ class _QuizCard extends StatelessWidget {
   final LocalQuizEntity quiz;
   final VoidCallback onSelect;
   final VoidCallback onDelete;
+  final bool canDelete;
 
   const _QuizCard({
     required this.quiz,
     required this.onSelect,
     required this.onDelete,
+    required this.canDelete,
   });
 
   @override
@@ -254,8 +304,7 @@ class _QuizCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       decoration: AppTheme.cardDecoration(),
       child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           width: 44,
           height: 44,
@@ -263,33 +312,31 @@ class _QuizCard extends StatelessWidget {
             gradient: AppTheme.primaryGradient,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.quiz_rounded,
-              color: Colors.white, size: 22),
+          child: const Icon(Icons.quiz_rounded, color: Colors.white, size: 22),
         ),
         title: Text(quiz.name,
             style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontWeight: FontWeight.w700)),
+                color: AppTheme.textPrimary, fontWeight: FontWeight.w700)),
         subtitle: Text(
           '${quiz.totalQuestions} questão(ões)',
-          style:
-              const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: const Icon(Icons.delete_outline,
-                  color: AppTheme.danger, size: 20),
-              onPressed: onDelete,
-              tooltip: 'Excluir',
-            ),
+            if (canDelete)
+              IconButton(
+                icon: const Icon(Icons.delete_outline,
+                    color: AppTheme.danger, size: 20),
+                onPressed: onDelete,
+                tooltip: 'Excluir',
+              ),
             ElevatedButton(
               onPressed: onSelect,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),

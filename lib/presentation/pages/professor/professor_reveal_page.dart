@@ -17,7 +17,12 @@ import '../../widgets/question_engine_widget.dart';
 /// Mostra o enunciado completo (HTML rico) e as alternativas com a
 /// resposta correta destacada em verde.
 class ProfessorRevealPage extends StatelessWidget {
-  const ProfessorRevealPage({super.key});
+  final QuestionEntity? question;
+
+  const ProfessorRevealPage({
+    super.key,
+    this.question,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,20 +30,24 @@ class ProfessorRevealPage extends StatelessWidget {
       builder: (context, prof, _) {
         final state = prof.quizState;
 
-        // Encontra a questão que estava ativa pelo slot (identificador único Moodle)
-        final targetSlot = prof.revealQuestionSlot ?? state.currentSlot;
-        final QuestionEntity? question = prof.questions.isEmpty
-            ? null
-            : prof.questions.cast<QuestionEntity?>().firstWhere(
-                  (q) => q!.slot == targetSlot,
-                  orElse: () => prof.questions.first,
-                );
+        final explicitQuestion = question;
+        final targetSlot = explicitQuestion?.slot ??
+            prof.revealQuestionSlot ??
+            state.currentSlot;
+        final QuestionEntity? resolvedQuestion = explicitQuestion ??
+            (prof.questions.isEmpty
+                ? null
+                : prof.questions.cast<QuestionEntity?>().firstWhere(
+                      (q) => q!.slot == targetSlot,
+                      orElse: () => prof.questions.first,
+                    ));
 
         return _RevealScaffold(
           state: state,
-          question: question,
-          questionIndex:
-              question == null ? -1 : prof.questions.indexOf(question),
+          question: resolvedQuestion,
+          questionIndex: resolvedQuestion == null
+              ? -1
+              : prof.questions.indexOf(resolvedQuestion),
         );
       },
     );

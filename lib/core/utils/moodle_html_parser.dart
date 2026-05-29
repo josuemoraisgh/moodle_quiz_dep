@@ -212,8 +212,7 @@ class MoodleHtmlParser {
     final htmlType = _extractTypeFromHtml(normalizedHtml);
 
     final choices = _extractChoices(normalizedHtml, token, baseUrl);
-    var answerControls =
-        _extractAnswerControls(normalizedHtml, token, baseUrl);
+    var answerControls = _extractAnswerControls(normalizedHtml, token, baseUrl);
 
     // Resolve o tipo final: prefere o tipo inferido do HTML; fallback para contagem de radios
     String type;
@@ -1097,15 +1096,14 @@ class MoodleHtmlParser {
         if (_isMoodleUiControl(element)) continue;
 
         final clone = html_parser.parseFragment(element.outerHtml);
-        for (final el in clone.querySelectorAll(
-            'select, input, button, .accesshide, .sr-only, '
-            '.visually-hidden, .visuallyhidden')) {
+        for (final el in clone
+            .querySelectorAll('select, input, button, .accesshide, .sr-only, '
+                '.visually-hidden, .visuallyhidden')) {
           el.remove();
         }
 
         final elementClones = clone.nodes.whereType<dom.Element>();
-        final elementClone =
-            elementClones.isEmpty ? null : elementClones.first;
+        final elementClone = elementClones.isEmpty ? null : elementClones.first;
         final rawHtml = elementClone?.innerHtml ?? element.innerHtml;
         final htmlText = _rewriteResourceUrls(rawHtml, token, baseUrl);
         final text = _stripHtml(htmlText).trim();

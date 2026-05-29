@@ -1,12 +1,19 @@
+import '../../core/config/quiz_runtime_config.dart';
 import '../../domain/entities/app_settings_entity.dart';
 import '../../domain/entities/local_user_entity.dart';
 import '../../domain/entities/student_entity.dart';
-import '../../domain/repositories/i_local_auth_repository.dart';
+import '../../domain/repositories/i_quiz_auth_repository.dart';
 import '../datasources/local_datasource.dart';
 
-class LocalAuthRepositoryImpl implements ILocalAuthRepository {
+class LocalAuthRepositoryImpl implements IQuizAuthRepository {
   final LocalDatasource _ds;
   LocalAuthRepositoryImpl(this._ds);
+
+  @override
+  QuizOperationMode get operationMode => QuizOperationMode.offline;
+
+  @override
+  bool get supportsLocalSetup => true;
 
   @override
   Future<AppSettingsEntity> getSettings() => _ds.loadSettings();
@@ -26,6 +33,7 @@ class LocalAuthRepositoryImpl implements ILocalAuthRepository {
   Future<LocalUserEntity?> login({
     required String name,
     required String password,
+    String? baseUrl,
   }) async {
     final settings = await _ds.loadSettings();
     final trimmed = name.trim();
@@ -33,8 +41,7 @@ class LocalAuthRepositoryImpl implements ILocalAuthRepository {
     // ── Professor ──────────────────────────────────────────────────────────
     if (trimmed.toLowerCase() == 'professor') {
       if (password == settings.teacherPassword) {
-        return const LocalUserEntity(
-            id: 0, name: 'Professor', isTeacher: true);
+        return const LocalUserEntity(id: 0, name: 'Professor', isTeacher: true);
       }
       return null;
     }

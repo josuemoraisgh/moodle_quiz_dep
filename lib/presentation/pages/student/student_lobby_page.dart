@@ -84,8 +84,8 @@ class _StudentAppBar extends StatelessWidget {
               gradient: AppTheme.primaryGradient,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.person_rounded,
-                color: Colors.white, size: 20),
+            child:
+                const Icon(Icons.person_rounded, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -96,11 +96,9 @@ class _StudentAppBar extends StatelessWidget {
                     fontWeight: FontWeight.w700)),
           ),
           IconButton(
-            icon:
-                const Icon(Icons.logout, color: AppTheme.textSecondary),
+            icon: const Icon(Icons.logout, color: AppTheme.textSecondary),
             tooltip: 'Sair',
             onPressed: () async {
-              student.dispose();
               await auth.logout();
               if (context.mounted) context.go(AppRouter.login);
             },
@@ -136,10 +134,7 @@ class _WaitingView extends StatelessWidget {
                   color: Colors.white, size: 40),
             )
                 .animate(onPlay: (c) => c.repeat(reverse: true))
-                .scaleXY(
-                    end: 0.85,
-                    duration: 900.ms,
-                    curve: Curves.easeInOut),
+                .scaleXY(end: 0.85, duration: 900.ms, curve: Curves.easeInOut),
             const SizedBox(height: 24),
             Text(
               title.isNotEmpty ? title : 'Quiz Presencial',
@@ -149,8 +144,7 @@ class _WaitingView extends StatelessWidget {
             const SizedBox(height: 12),
             const Text(
               'Aguarde o professor liberar a próxima questão…',
-              style: TextStyle(
-                  color: AppTheme.textSecondary, fontSize: 15),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 15),
               textAlign: TextAlign.center,
             ),
           ],
@@ -226,8 +220,7 @@ class _QuestionView extends StatelessWidget {
               if (!student.hasAnswered && state.isActive) ...[
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
-                  onPressed: student.hasAnyAnswer &&
-                          !student.isSubmitting
+                  onPressed: student.hasAnyAnswer && !student.isSubmitting
                       ? student.submitAnswer
                       : null,
                   icon: student.isSubmitting
@@ -259,14 +252,12 @@ class _QuestionView extends StatelessWidget {
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.timer_off_rounded,
-                          color: AppTheme.warning),
+                      Icon(Icons.timer_off_rounded, color: AppTheme.warning),
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Tempo esgotado. Aguarde a próxima questão.',
-                          style:
-                              TextStyle(color: AppTheme.warning),
+                          style: TextStyle(color: AppTheme.warning),
                         ),
                       ),
                     ],
@@ -277,8 +268,8 @@ class _QuestionView extends StatelessWidget {
               if (student.error != null) ...[
                 const SizedBox(height: 8),
                 Text(student.error!,
-                    style: const TextStyle(
-                        color: AppTheme.danger, fontSize: 12)),
+                    style:
+                        const TextStyle(color: AppTheme.danger, fontSize: 12)),
               ],
             ],
           ),
@@ -293,9 +284,7 @@ class _FeedbackCard extends StatelessWidget {
   final bool graded;
   final String? choiceText;
   const _FeedbackCard(
-      {required this.correct,
-      required this.graded,
-      this.choiceText});
+      {required this.correct, required this.graded, this.choiceText});
 
   @override
   Widget build(BuildContext context) {
@@ -311,8 +300,7 @@ class _FeedbackCard extends StatelessWidget {
     );
   }
 
-  Widget _card(Color color, IconData icon, String title,
-      String? subtitle) {
+  Widget _card(Color color, IconData icon, String title, String? subtitle) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -336,8 +324,7 @@ class _FeedbackCard extends StatelessWidget {
                 if (subtitle != null)
                   Text(subtitle,
                       style: const TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 13)),
+                          color: AppTheme.textSecondary, fontSize: 13)),
               ],
             ),
           ),
@@ -346,10 +333,7 @@ class _FeedbackCard extends StatelessWidget {
     )
         .animate()
         .fadeIn(duration: 400.ms)
-        .slideY(
-            begin: 0.3,
-            duration: 400.ms,
-            curve: Curves.easeOut);
+        .slideY(begin: 0.3, duration: 400.ms, curve: Curves.easeOut);
   }
 }
 
@@ -368,18 +352,15 @@ class _FinishedView extends StatelessWidget {
               color: AppTheme.gold, size: 72),
           const SizedBox(height: 16),
           Text('Quiz Finalizado!',
-              style:
-                  AppTheme.headlineLarge.copyWith(color: AppTheme.gold)),
+              style: AppTheme.headlineLarge.copyWith(color: AppTheme.gold)),
           const SizedBox(height: 8),
           const Text('Obrigado por participar!',
-              style: TextStyle(
-                  color: AppTheme.textSecondary, fontSize: 15)),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 15)),
         ],
       )
           .animate()
           .fadeIn(duration: 600.ms)
-          .scale(
-              begin: const Offset(0.8, 0.8), duration: 600.ms),
+          .scale(begin: const Offset(0.8, 0.8), duration: 600.ms),
     );
   }
 }

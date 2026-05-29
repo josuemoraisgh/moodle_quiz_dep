@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../domain/entities/question_entity.dart';
 import '../../presentation/controllers/auth_controller.dart';
 import '../../presentation/pages/login_page.dart';
 import '../../presentation/pages/professor/professor_home_page.dart';
@@ -12,21 +13,21 @@ import '../../presentation/pages/professor/ranking_page.dart';
 import '../../presentation/pages/student/student_lobby_page.dart';
 
 class AppRouter {
-  static const String login          = '/login';
+  static const String login = '/login';
   static const String professorSetup = '/professor/setup';
-  static const String professorQuiz  = '/professor/quiz';
-  static const String professor      = '/professor';
-  static const String professorHome  = '/professor'; // alias
-  static const String professorRank  = '/professor/rank';
+  static const String professorQuiz = '/professor/quiz';
+  static const String professor = '/professor';
+  static const String professorHome = '/professor'; // alias
+  static const String professorRank = '/professor/rank';
   static const String professorReveal = '/professor/reveal';
-  static const String studentLobby   = '/student/lobby';
+  static const String studentLobby = '/student/lobby';
 
   static GoRouter build(BuildContext context) {
     return GoRouter(
       initialLocation: login,
       redirect: (context, state) {
         final auth = context.read<AuthController>();
-        final loc  = state.matchedLocation;
+        final loc = state.matchedLocation;
 
         // Setup sempre acessível (professor sem senha ainda).
         if (loc == professorSetup) return null;
@@ -50,18 +51,29 @@ class AppRouter {
         return null;
       },
       routes: [
-        GoRoute(path: login,           builder: (_, __) => const LoginPage()),
-        GoRoute(path: professorSetup,  builder: (_, __) => const ProfessorSetupPage()),
-        GoRoute(path: professorQuiz,   builder: (_, __) => const ProfessorQuizSelectionPage()),
+        GoRoute(path: login, builder: (_, __) => const LoginPage()),
+        GoRoute(
+            path: professorSetup,
+            builder: (_, __) => const ProfessorSetupPage()),
+        GoRoute(
+            path: professorQuiz,
+            builder: (_, __) => const ProfessorQuizSelectionPage()),
         GoRoute(
           path: professor,
           builder: (_, __) => const ProfessorHomePage(),
           routes: [
-            GoRoute(path: 'rank',   builder: (_, __) => const RankingPage()),
-            GoRoute(path: 'reveal', builder: (_, __) => const ProfessorRevealPage()),
+            GoRoute(path: 'rank', builder: (_, __) => const RankingPage()),
+            GoRoute(
+                path: 'reveal',
+                builder: (_, state) => ProfessorRevealPage(
+                      question: state.extra is QuestionEntity
+                          ? state.extra as QuestionEntity
+                          : null,
+                    )),
           ],
         ),
-        GoRoute(path: studentLobby,  builder: (_, __) => const StudentLobbyPage()),
+        GoRoute(
+            path: studentLobby, builder: (_, __) => const StudentLobbyPage()),
       ],
     );
   }

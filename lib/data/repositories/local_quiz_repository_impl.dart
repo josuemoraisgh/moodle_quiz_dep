@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../../core/config/quiz_runtime_config.dart';
 import '../../core/services/quiz_state_service.dart';
 import '../../core/utils/moodle_xml_quiz_parser.dart';
 import '../../data/datasources/local_datasource.dart';
@@ -10,10 +11,11 @@ import '../../domain/entities/question_entity.dart';
 import '../../domain/entities/quiz_state_entity.dart';
 import '../../domain/entities/score_entity.dart';
 import '../../domain/entities/student_entity.dart';
+import '../../domain/repositories/i_quiz_runtime_repository.dart';
 
 /// Repositório local de quiz – SQLite como fonte de verdade, sem rede externa.
 /// Usado pelo [ProfessorController] e pelo [StudentController].
-class LocalQuizRepository {
+class LocalQuizRepository implements IQuizRuntimeRepository {
   final LocalDatasource _db;
   final QuizStateService _stateService;
 
@@ -24,21 +26,39 @@ class LocalQuizRepository {
 
   int? get currentSessionId => _sessionId;
 
+  @override
+  QuizOperationMode get operationMode => QuizOperationMode.offline;
+
+  @override
+  bool get supportsImport => true;
+
+  @override
+  bool get supportsDelete => true;
+
+  @override
+  Future<void> initialize(LocalUserEntity user) async {}
+
   // ── Quizzes ────────────────────────────────────────────────────────────────
 
+  @override
   Future<List<LocalQuizEntity>> loadQuizzes() => _db.loadQuizzes();
 
+  @override
   Future<List<StudentEntity>> loadStudents() => _db.loadStudents();
 
+  @override
   Future<LocalQuizEntity> saveQuiz(
           String name, List<QuestionEntity> questions) =>
       _db.saveQuiz(name, questions);
 
+  @override
   Future<LocalQuizEntity?> loadQuizWithQuestions(int quizId) =>
       _db.loadQuizWithQuestions(quizId);
 
+  @override
   Future<void> deleteQuiz(int quizId) => _db.deleteQuiz(quizId);
 
+  @override
   Future<LocalQuizEntity> importFromXml(
       Uint8List bytes, String fileName) async {
     final questions =
@@ -48,6 +68,7 @@ class LocalQuizRepository {
 
   // ── Sessão ─────────────────────────────────────────────────────────────────
 
+  @override
   Future<QuizStateEntity> openSession(LocalQuizEntity quiz) async {
     _sessionId = await _db.getLatestSessionId(quiz.id);
     _sessionId ??= await _db.createSession(quiz.id, quiz.name);
@@ -55,11 +76,13 @@ class LocalQuizRepository {
     return state ?? QuizStateEntity.empty();
   }
 
+  @override
   Future<void> updateState(QuizStateEntity state) async {
     if (_sessionId == null) return;
     await _db.updateSession(_sessionId!, state);
   }
 
+  @override
   Future<QuizStateEntity> resetSession(int quizId, String quizTitle) async {
     if (_sessionId != null) await _db.deleteSessionAnswers(_sessionId!);
     _sessionId = await _db.createSession(quizId, quizTitle);
@@ -69,6 +92,17 @@ class LocalQuizRepository {
 
   // ── Pontuações ─────────────────────────────────────────────────────────────
 
+  @override
+  Future<QuizStateEntity> getLiveState() async => _stateService.quizState;
+
+  @override
+  Future<QuestionEntity?> getLiveQuestion(int slot) async {
+    final current = _stateService.currentQuestion;
+    if (current?.slot == slot) return current;
+    return null;
+  }
+
+  @override
   Future<List<ScoreEntity>> loadScores() async {
     final id = _sessionId;
     if (id == null) return [];
@@ -94,6 +128,7 @@ class LocalQuizRepository {
 
   // ── Resposta (modo local – mesmo dispositivo) ──────────────────────────────
 
+  @override
   Future<bool> submitAnswer({
     required LocalUserEntity user,
     required QuestionEntity question,
@@ -106,7 +141,7 @@ class LocalQuizRepository {
     if (await _db.hasStudentAnswered(sid, user.id, question.slot, roundId)) {
       return false;
     }
-    final correct = _grade(question, answers);
+    final correct = LocalQuestionGrader.grade(question, answers);
     await _db.saveAnswer(AnswerRecordEntity(
       id: 0,
       sessionId: sid,
@@ -123,11 +158,11 @@ class LocalQuizRepository {
   }
 
   /// Persiste resposta de aluno remoto (chegou via Wi-Fi → POST /api/score).
+  @override
   Future<void> saveRemoteAnswer(Map<String, dynamic> body) async {
     final sid = _sessionId;
     if (sid == null) return;
-    final studentId =
-        int.tryParse(body['studentId']?.toString() ?? '0') ?? 0;
+    final studentId = int.tryParse(body['studentId']?.toString() ?? '0') ?? 0;
     final studentName = body['studentName'] as String? ?? 'Desconhecido';
     final slot = (body['questionSlot'] as num?)?.toInt() ?? 0;
     final roundId = body['roundId'] as String? ?? '';
@@ -151,8 +186,12 @@ class LocalQuizRepository {
   }
 
   // ── Avaliação local ────────────────────────────────────────────────────────
+}
 
-  static bool _grade(QuestionEntity q, Map<String, String> answers) {
+class LocalQuestionGrader {
+  const LocalQuestionGrader._();
+
+  static bool grade(QuestionEntity q, Map<String, String> answers) {
     if (answers.isEmpty) return false;
 
     if (q.isMultiChoice) {

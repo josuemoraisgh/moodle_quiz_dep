@@ -45,9 +45,9 @@ class LocalDatasource {
       teacherPassword: map['teacher_password'] ?? '',
       studentPassword: map['student_password'] ?? '',
       quizTitle: map['quiz_title'] ?? 'Quiz Presencial',
-      defaultDurationSeconds:
-          int.tryParse(map['default_duration'] ?? '') ?? 30,
-      durationOptions: options.isEmpty ? [15, 20, 30, 45, 60, 90, 120] : options,
+      defaultDurationSeconds: int.tryParse(map['default_duration'] ?? '') ?? 30,
+      durationOptions:
+          options.isEmpty ? [15, 20, 30, 45, 60, 90, 120] : options,
     );
   }
 
@@ -116,15 +116,15 @@ class LocalDatasource {
     final db = await _db.database;
     final rows = await db.query('students', orderBy: 'name ASC');
     return rows
-        .map((r) =>
-            StudentEntity(id: r['id'] as int, name: r['name'] as String))
+        .map(
+            (r) => StudentEntity(id: r['id'] as int, name: r['name'] as String))
         .toList();
   }
 
   Future<StudentEntity?> getStudentByName(String name) async {
     final db = await _db.database;
-    final rows = await db
-        .query('students', where: 'name = ?', whereArgs: [name.trim()]);
+    final rows =
+        await db.query('students', where: 'name = ?', whereArgs: [name.trim()]);
     if (rows.isEmpty) return null;
     return StudentEntity(
         id: rows.first['id'] as int, name: rows.first['name'] as String);
@@ -333,8 +333,7 @@ class LocalDatasource {
     final db = await _db.database;
     final rows = await db.query(
       'answers',
-      where:
-          'session_id=? AND student_id=? AND question_slot=? AND round_id=?',
+      where: 'session_id=? AND student_id=? AND question_slot=? AND round_id=?',
       whereArgs: [sessionId, studentId, questionSlot, roundId],
       limit: 1,
     );
@@ -390,8 +389,7 @@ class LocalDatasource {
 
   Future<void> deleteSessionAnswers(int sessionId) async {
     final db = await _db.database;
-    await db
-        .delete('answers', where: 'session_id=?', whereArgs: [sessionId]);
+    await db.delete('answers', where: 'session_id=?', whereArgs: [sessionId]);
   }
 
   // ── Question serialization ────────────────────────────────────────────────
@@ -411,15 +409,13 @@ class LocalDatasource {
         'imageUrls': q.imageUrls,
         'choices': q.choices.map(_encodeChoice).toList(),
         'answerControls': q.answerControls.map(_encodeControl).toList(),
-        'matchData':
-            q.matchData == null ? null : _encodeMatch(q.matchData!),
+        'matchData': q.matchData == null ? null : _encodeMatch(q.matchData!),
         'gapInputData':
             q.gapInputData == null ? null : _encodeGap(q.gapInputData!),
       });
 
   QuestionEntity _decodeQuestion(Map<String, dynamic> row) {
-    final data =
-        jsonDecode(row['data'] as String) as Map<String, dynamic>;
+    final data = jsonDecode(row['data'] as String) as Map<String, dynamic>;
     return QuestionEntity(
       slot: data['slot'] as int? ?? 1,
       page: data['page'] as int? ?? 0,
@@ -435,9 +431,8 @@ class LocalDatasource {
       imageUrls: (data['imageUrls'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
-      choices: (data['choices'] as List<dynamic>? ?? [])
-          .map(_decodeChoice)
-          .toList(),
+      choices:
+          (data['choices'] as List<dynamic>? ?? []).map(_decodeChoice).toList(),
       answerControls: (data['answerControls'] as List<dynamic>? ?? [])
           .map(_decodeControl)
           .toList(),
@@ -483,9 +478,8 @@ class LocalDatasource {
       value: m['value'] as String? ?? '',
       label: m['label'] as String? ?? '',
       htmlLabel: m['htmlLabel'] as String? ?? '',
-      options: (m['options'] as List<dynamic>? ?? [])
-          .map(_decodeChoice)
-          .toList(),
+      options:
+          (m['options'] as List<dynamic>? ?? []).map(_decodeChoice).toList(),
     );
   }
 
@@ -513,9 +507,8 @@ class LocalDatasource {
           correctValue: sm['correctValue'] as String?,
         );
       }).toList(),
-      options: (m['options'] as List<dynamic>? ?? [])
-          .map(_decodeChoice)
-          .toList(),
+      options:
+          (m['options'] as List<dynamic>? ?? []).map(_decodeChoice).toList(),
     );
   }
 
@@ -534,12 +527,10 @@ class LocalDatasource {
     return GapInputData(
       inputNamePrefix: m['inputNamePrefix'] as String? ?? '',
       gapCount: m['gapCount'] as int? ?? 0,
-      options: (m['options'] as List<dynamic>? ?? [])
-          .map(_decodeChoice)
-          .toList(),
+      options:
+          (m['options'] as List<dynamic>? ?? []).map(_decodeChoice).toList(),
       optionsByGap: rawByGap
-          .map((list) =>
-              (list as List<dynamic>).map(_decodeChoice).toList())
+          .map((list) => (list as List<dynamic>).map(_decodeChoice).toList())
           .toList(),
     );
   }

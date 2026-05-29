@@ -10,6 +10,7 @@ import '../../domain/entities/question_entity.dart';
 import '../../domain/entities/quiz_state_entity.dart';
 import '../../domain/entities/score_entity.dart';
 import '../../domain/entities/student_entity.dart';
+import '../../domain/services/quiz_sync_server.dart';
 
 /// Servidor HTTP local que substitui o Moodle no modo presencial offline.
 ///
@@ -23,24 +24,49 @@ import '../../domain/entities/student_entity.dart';
 ///   POST /api/score          → registrar resposta de aluno
 ///   GET  /api/scores         → ranking atual
 ///   POST /api/reset          → reiniciar sessão
-class OfflineLocalServer {
+class OfflineLocalServer implements QuizSyncServer {
   final int port;
   HttpServer? _server;
   String _localIp = '0.0.0.0';
 
   // Callbacks que o ProfessorController injeta
-  QuizStateEntity Function()? onGetState;
-  QuestionEntity? Function(int slot)? onGetQuestion;
-  List<StudentEntity> Function()? onGetStudents;
-  List<ScoreEntity> Function()? onGetScores;
-  Future<void> Function(Map<String, dynamic> body)? onScore;
-  Future<void> Function()? onReset;
+  QuizStateEntity Function()? _onGetState;
+  QuestionEntity? Function(int slot)? _onGetQuestion;
+  List<StudentEntity> Function()? _onGetStudents;
+  List<ScoreEntity> Function()? _onGetScores;
+  Future<void> Function(Map<String, dynamic> body)? _onScore;
+  Future<void> Function()? _onReset;
 
   OfflineLocalServer({this.port = 8080});
 
   String get localIp => _localIp;
+  @override
   String get serverUrl => 'http://$_localIp:$port';
 
+  @override
+  set onGetState(QuizStateEntity Function()? callback) =>
+      _onGetState = callback;
+
+  @override
+  set onGetQuestion(QuestionEntity? Function(int slot)? callback) =>
+      _onGetQuestion = callback;
+
+  @override
+  set onGetStudents(List<StudentEntity> Function()? callback) =>
+      _onGetStudents = callback;
+
+  @override
+  set onGetScores(List<ScoreEntity> Function()? callback) =>
+      _onGetScores = callback;
+
+  @override
+  set onScore(Future<void> Function(Map<String, dynamic> body)? callback) =>
+      _onScore = callback;
+
+  @override
+  set onReset(Future<void> Function()? callback) => _onReset = callback;
+
+  @override
   Future<void> start() async {
     _localIp = (await getLocalIp()) ?? '0.0.0.0';
 
@@ -57,49 +83,52 @@ class OfflineLocalServer {
     router.get('/', _handleWebRoot);
     router.get('/<path|.*>', _handle404);
 
-    final pipeline = const Pipeline()
-        .addMiddleware(_cors())
-        .addHandler(router.call);
+    final pipeline =
+        const Pipeline().addMiddleware(_cors()).addHandler(router.call);
 
     _server = await shelf_io.serve(pipeline, InternetAddress.anyIPv4, port);
   }
 
+  @override
   Future<void> stop() async {
     await _server?.close(force: true);
     _server = null;
   }
 
+  @override
   bool get isRunning => _server != null;
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   Response _handleState(Request req) {
-    final state = onGetState?.call() ?? QuizStateEntity.empty();
+    final state = _onGetState?.call() ?? QuizStateEntity.empty();
     return _json(_stateToMap(state));
   }
 
   Response _handleQuestion(Request req, String slot) {
     final slotNum = int.tryParse(slot);
     if (slotNum == null) return Response.badRequest();
-    final q = onGetQuestion?.call(slotNum);
-    if (q == null) return Response.notFound('{"error":"Questão não encontrada"}');
+    final q = _onGetQuestion?.call(slotNum);
+    if (q == null) {
+      return Response.notFound('{"error":"Questão não encontrada"}');
+    }
     return _json(_questionToMap(q));
   }
 
   Response _handleStudents(Request req) {
-    final students = onGetStudents?.call() ?? [];
+    final students = _onGetStudents?.call() ?? [];
     return _json({'students': students.map((s) => s.name).toList()});
   }
 
   Response _handleScores(Request req) {
-    final scores = onGetScores?.call() ?? [];
+    final scores = _onGetScores?.call() ?? [];
     return _json({'scores': scores.map(_scoreToMap).toList()});
   }
 
   Future<Response> _handleScore(Request req) async {
     try {
       final body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
-      await onScore?.call(body);
+      await _onScore?.call(body);
       return _json({'ok': true});
     } catch (e) {
       return Response.internalServerError(body: jsonEncode({'error': '$e'}));
@@ -107,7 +136,7 @@ class OfflineLocalServer {
   }
 
   Future<Response> _handleReset(Request req) async {
-    await onReset?.call();
+    await _onReset?.call();
     return _json({'ok': true});
   }
 

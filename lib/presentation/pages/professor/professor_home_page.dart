@@ -70,47 +70,51 @@ class _ProfessorHomePageState extends State<ProfessorHomePage> {
     return Consumer2<ProfessorController, AuthController>(
       builder: (context, prof, auth, _) {
         return Focus(
-          autofocus: true,
-          onKeyEvent: (node, event) {
-            if (event is! KeyDownEvent) return KeyEventResult.ignored;
-            if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-              _moveQuestion(prof, -1);
-              return KeyEventResult.handled;
-            }
-            if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-              _moveQuestion(prof, 1);
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          child: Scaffold(
-          body: Container(
-            decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
-            child: SafeArea(
-              child: Responsive.isDesktop(context)
-                  ? _DesktopLayout(
-                      prof: prof,
-                      auth: auth,
-                      questionIndex: _questionIndex,
-                      showQuestionThumbnails: _showQuestionThumbnails,
-                      onToggleQuestionThumbnails: () => setState(
-                        () {
-                          _showQuestionThumbnails = !_showQuestionThumbnails;
-                          prof.setShowQuestionThumbnails(
-                              _showQuestionThumbnails);
-                        },
-                      ),
-                      onIndexChanged: (i) => _selectQuestion(prof, i),
-                    )
-                  : _MobileLayout(
-                      prof: prof,
-                      auth: auth,
-                      questionIndex: _questionIndex,
-                      onIndexChanged: (i) => _selectQuestion(prof, i),
-                    ),
-            ),
-          ),
-        ));
+            autofocus: true,
+            onKeyEvent: (node, event) {
+              if (!prof.isSingleQuestionNavigation) {
+                return KeyEventResult.ignored;
+              }
+              if (event is! KeyDownEvent) return KeyEventResult.ignored;
+              if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                _moveQuestion(prof, -1);
+                return KeyEventResult.handled;
+              }
+              if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                _moveQuestion(prof, 1);
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: Scaffold(
+              body: Container(
+                decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+                child: SafeArea(
+                  child: Responsive.isDesktop(context)
+                      ? _DesktopLayout(
+                          prof: prof,
+                          auth: auth,
+                          questionIndex: _questionIndex,
+                          showQuestionThumbnails: _showQuestionThumbnails,
+                          onToggleQuestionThumbnails: () => setState(
+                            () {
+                              _showQuestionThumbnails =
+                                  !_showQuestionThumbnails;
+                              prof.setShowQuestionThumbnails(
+                                  _showQuestionThumbnails);
+                            },
+                          ),
+                          onIndexChanged: (i) => _selectQuestion(prof, i),
+                        )
+                      : _MobileLayout(
+                          prof: prof,
+                          auth: auth,
+                          questionIndex: _questionIndex,
+                          onIndexChanged: (i) => _selectQuestion(prof, i),
+                        ),
+                ),
+              ),
+            ));
       },
     );
   }
@@ -140,27 +144,18 @@ class _DesktopLayout extends StatelessWidget {
     return Row(
       children: [
         // Painel lateral – lista de questões
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          width: showQuestionThumbnails ? 320 : 56,
-          child: showQuestionThumbnails
-              ? _QuestionListPanel(
-                  questions: prof.questions,
-                  selectedIndex: questionIndex,
-                  quizState: prof.quizState,
-                  onSelect: onIndexChanged,
-                  onToggleVisibility: onToggleQuestionThumbnails,
-                )
-              : _CollapsedQuestionListHandle(
-                  onShow: onToggleQuestionThumbnails,
-                  questions: prof.questions,
-                  selectedIndex: questionIndex,
-                  quizState: prof.quizState,
-                  onSelect: onIndexChanged,
-                ),
-        ),
-        const VerticalDivider(width: 1, color: AppTheme.bgCard),
+        if (prof.isListNavigation) ...[
+          SizedBox(
+            width: 320,
+            child: _QuestionListPanel(
+              questions: prof.questions,
+              selectedIndex: questionIndex,
+              quizState: prof.quizState,
+              onSelect: onIndexChanged,
+            ),
+          ),
+          const VerticalDivider(width: 1, color: AppTheme.bgCard),
+        ],
         // Painel principal – controles
         Expanded(
           child: _ControlPanel(
@@ -192,6 +187,21 @@ class _MobileLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (prof.isSingleQuestionNavigation) {
+      return Column(
+        children: [
+          _ProfessorAppBar(auth: auth, prof: prof),
+          Expanded(
+            child: _ControlPanel(
+              prof: prof,
+              auth: auth,
+              selectedIndex: questionIndex,
+              onIndexChanged: onIndexChanged,
+            ),
+          ),
+        ],
+      );
+    }
     return DefaultTabController(
       length: 2,
       child: Column(
@@ -282,7 +292,7 @@ class _ProfessorAppBar extends StatelessWidget {
                         .clamp(0, prof.questions.length - 1);
                     final question = prof.questions[index];
                     prof.setRevealQuestion(question);
-                    context.push(AppRouter.professorReveal);
+                    context.push(AppRouter.professorReveal, extra: question);
                   },
           ),
           IconButton(
@@ -311,14 +321,12 @@ class _QuestionListPanel extends StatelessWidget {
   final int selectedIndex;
   final QuizStateEntity quizState;
   final void Function(int) onSelect;
-  final VoidCallback? onToggleVisibility;
 
   const _QuestionListPanel({
     required this.questions,
     required this.selectedIndex,
     required this.quizState,
     required this.onSelect,
-    this.onToggleVisibility,
   });
 
   @override
@@ -338,15 +346,9 @@ class _QuestionListPanel extends StatelessWidget {
 
     return ListView.builder(
       padding: const EdgeInsets.all(12),
-      itemCount: questions.length + (onToggleVisibility == null ? 0 : 1),
+      itemCount: questions.length,
       itemBuilder: (_, i) {
-        if (onToggleVisibility != null && i == 0) {
-          return _QuestionListHeader(
-            questionCount: questions.length,
-            onToggleVisibility: onToggleVisibility!,
-          );
-        }
-        final questionOffset = onToggleVisibility == null ? i : i - 1;
+        final questionOffset = i;
         final q = questions[questionOffset];
         final isActive = quizState.currentPage == q.page && quizState.isActive;
         final isSelected = questionOffset == selectedIndex;
@@ -421,6 +423,7 @@ class _QuestionListPanel extends StatelessWidget {
 
 // ── Painel de controle ────────────────────────────────────────────────────────
 
+// ignore: unused_element
 class _QuestionListHeader extends StatelessWidget {
   final int questionCount;
   final VoidCallback onToggleVisibility;
@@ -462,6 +465,7 @@ class _QuestionListHeader extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _CollapsedQuestionListHandle extends StatelessWidget {
   final VoidCallback onShow;
   final List<QuestionEntity> questions;
@@ -627,6 +631,7 @@ class _ControlPanelState extends State<_ControlPanel> {
               index: selectedIndex,
               showCorrect: _showCorrectAnswer,
               showFeedback: _showFeedback,
+              showNavigationArrows: widget.prof.isSingleQuestionNavigation,
               onPrevious: selectedIndex > 0
                   ? () => widget.onIndexChanged(selectedIndex - 1)
                   : null,
@@ -717,8 +722,9 @@ class _ControlPanelState extends State<_ControlPanel> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed:
-                      prof.isLoading ? null : () => _confirmReset(context, prof),
+                  onPressed: prof.isLoading
+                      ? null
+                      : () => _confirmReset(context, prof),
                   icon: const Icon(Icons.refresh_rounded,
                       color: AppTheme.danger, size: 18),
                   label: const Text('Reiniciar Quiz',
@@ -757,7 +763,6 @@ class _ControlPanelState extends State<_ControlPanel> {
             const SizedBox(height: 12),
             _CollapsibleLogPanel(log: prof.log),
           ],
-
         ],
       ),
     );
@@ -965,8 +970,7 @@ class _QrBox extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           url,
-          style: const TextStyle(
-              color: AppTheme.textSecondary, fontSize: 10),
+          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10),
           textAlign: TextAlign.center,
           overflow: TextOverflow.ellipsis,
         ),
@@ -1102,6 +1106,7 @@ class _SelectedQuestionCard extends StatefulWidget {
   final int index;
   final bool showCorrect;
   final bool showFeedback;
+  final bool showNavigationArrows;
   final VoidCallback? onPrevious;
   final VoidCallback? onNext;
   const _SelectedQuestionCard({
@@ -1109,6 +1114,7 @@ class _SelectedQuestionCard extends StatefulWidget {
     required this.index,
     this.showCorrect = false,
     this.showFeedback = false,
+    this.showNavigationArrows = true,
     this.onPrevious,
     this.onNext,
   });
@@ -1130,99 +1136,103 @@ class _SelectedQuestionCardState extends State<_SelectedQuestionCard> {
       alignment: Alignment.center,
       children: [
         Container(
-      padding: const EdgeInsets.fromLTRB(52, 16, 52, 16),
-      decoration: AppTheme.cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          padding: const EdgeInsets.fromLTRB(52, 16, 52, 16),
+          decoration: AppTheme.cardDecoration(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text('Questão ${widget.index + 1}',
-                    style: const TextStyle(
-                        color: AppTheme.accent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Questão ${widget.index + 1}',
+                        style: const TextStyle(
+                            color: AppTheme.accent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() => _expanded = !_expanded),
+                    tooltip:
+                        _expanded ? 'Recolher enunciado' : 'Expandir enunciado',
+                    icon: Icon(
+                      _expanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-              IconButton(
+              GestureDetector(
+                onTap: () => setState(() => _expanded = !_expanded),
+                child: AnimatedCrossFade(
+                  firstChild: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        previewText,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          height: 1.4,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                  secondChild: widget.showFeedback
+                      ? _QuestionFeedbackView(question: question)
+                      : QuestionEngineWidget(
+                          question: question,
+                          mode: QuestionEngineMode.preview,
+                          showCorrect: widget.showCorrect,
+                          compact: true,
+                          selectedAnswers: _selectedAnswers,
+                          onSelectAnswer: (name, value) =>
+                              setState(() => _selectedAnswers[name] = value),
+                        ),
+                  crossFadeState: _expanded
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
+                  duration: const Duration(milliseconds: 180),
+                ),
+              ),
+              TextButton.icon(
                 onPressed: () => setState(() => _expanded = !_expanded),
-                tooltip:
-                    _expanded ? 'Recolher enunciado' : 'Expandir enunciado',
                 icon: Icon(
                   _expanded
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.keyboard_arrow_down_rounded,
-                  color: AppTheme.textSecondary,
+                      ? Icons.unfold_less_rounded
+                      : Icons.unfold_more_rounded,
+                  size: 18,
+                ),
+                label: Text(_expanded ? 'Recolher' : 'Expandir'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.textSecondary,
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 32),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
             ],
           ),
-          GestureDetector(
-            onTap: () => setState(() => _expanded = !_expanded),
-            child: AnimatedCrossFade(
-              firstChild: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    previewText,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      height: 1.4,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-              secondChild: widget.showFeedback
-                  ? _QuestionFeedbackView(question: question)
-                  : QuestionEngineWidget(
-                      question: question,
-                      mode: QuestionEngineMode.preview,
-                      showCorrect: widget.showCorrect,
-                      compact: true,
-                      selectedAnswers: _selectedAnswers,
-                      onSelectAnswer: (name, value) =>
-                          setState(() => _selectedAnswers[name] = value),
-                    ),
-              crossFadeState: _expanded
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              duration: const Duration(milliseconds: 180),
-            ),
+        ),
+        if (widget.showNavigationArrows) ...[
+          _QuestionNavArrow(
+            alignment: Alignment.centerLeft,
+            icon: Icons.chevron_left_rounded,
+            tooltip: 'Questão anterior',
+            onPressed: widget.onPrevious,
           ),
-          TextButton.icon(
-            onPressed: () => setState(() => _expanded = !_expanded),
-            icon: Icon(
-              _expanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded,
-              size: 18,
-            ),
-            label: Text(_expanded ? 'Recolher' : 'Expandir'),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.textSecondary,
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(0, 32),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+          _QuestionNavArrow(
+            alignment: Alignment.centerRight,
+            icon: Icons.chevron_right_rounded,
+            tooltip: 'Próxima questão',
+            onPressed: widget.onNext,
           ),
         ],
-      ),
-        ),
-        _QuestionNavArrow(
-          alignment: Alignment.centerLeft,
-          icon: Icons.chevron_left_rounded,
-          tooltip: 'Questão anterior',
-          onPressed: widget.onPrevious,
-        ),
-        _QuestionNavArrow(
-          alignment: Alignment.centerRight,
-          icon: Icons.chevron_right_rounded,
-          tooltip: 'Próxima questão',
-          onPressed: widget.onNext,
-        ),
       ],
     );
   }

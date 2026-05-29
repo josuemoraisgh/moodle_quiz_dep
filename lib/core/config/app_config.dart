@@ -14,9 +14,8 @@ class AppConfig {
 
   /// Carrega campos opcionais de assets/config.json (se presente).
   static void loadFromMap(Map<String, dynamic> config) {
-    localServerPort =
-        int.tryParse(config['server_port']?.toString() ?? '') ??
-            localServerPort;
+    localServerPort = int.tryParse(config['server_port']?.toString() ?? '') ??
+        localServerPort;
     defaultQuestionTime =
         int.tryParse(config['default_question_time']?.toString() ?? '') ??
             defaultQuestionTime;

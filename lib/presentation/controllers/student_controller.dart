@@ -2,14 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/config/quiz_runtime_config.dart';
 import '../../core/services/quiz_state_service.dart';
 import '../../core/utils/moodle_html_parser.dart' show ParsedChoice;
 import '../../data/datasources/offline_local_client.dart';
-import '../../data/repositories/local_quiz_repository_impl.dart';
 import '../../domain/entities/local_user_entity.dart';
 import '../../domain/entities/question_entity.dart';
 import '../../domain/entities/quiz_state_entity.dart';
 import '../../domain/entities/score_entity.dart';
+import '../../domain/repositories/i_quiz_runtime_repository.dart';
 
 /// Gerencia estado do aluno – sem rede externa, reage ao QuizStateService.
 ///
@@ -20,7 +21,7 @@ import '../../domain/entities/score_entity.dart';
 /// Modo cliente Wi-Fi (dispositivo diferente do professor):
 ///   - Faz polling do servidor local do professor via OfflineLocalClient.
 class StudentController extends ChangeNotifier {
-  final LocalQuizRepository _quizRepo;
+  final IQuizRuntimeRepository _quizRepo;
   final QuizStateService _stateService;
 
   OfflineLocalClient? _client;
@@ -40,7 +41,7 @@ class StudentController extends ChangeNotifier {
   bool _isPolling = false;
 
   StudentController({
-    required LocalQuizRepository quizRepo,
+    required IQuizRuntimeRepository quizRepo,
     required QuizStateService stateService,
   })  : _quizRepo = quizRepo,
         _stateService = stateService;
@@ -66,7 +67,17 @@ class StudentController extends ChangeNotifier {
     _user = user;
     _client = null;
     _pollTimer?.cancel();
-    _stateService.addListener(_onStateChanged);
+    if (_quizRepo.operationMode == QuizOperationMode.online) {
+      _stateService.removeListener(_onStateChanged);
+      _quizRepo.initialize(user).then((_) {
+        _startPolling();
+      }).catchError((Object e) {
+        _error = e.toString();
+        notifyListeners();
+      });
+    } else {
+      _stateService.addListener(_onStateChanged);
+    }
   }
 
   /// Modo Wi-Fi – aluno num dispositivo separado.
@@ -106,28 +117,40 @@ class StudentController extends ChangeNotifier {
 
   void _startPolling() {
     _pollTimer?.cancel();
+    _pollRemote();
     _pollTimer =
         Timer.periodic(const Duration(seconds: 1), (_) => _pollRemote());
   }
 
   Future<void> _pollRemote() async {
     final client = _client;
-    if (client == null || _isPolling) return;
+    if (_isPolling) return;
     _isPolling = true;
     try {
-      final state = await client.getState();
+      final state = client == null
+          ? await _quizRepo.getLiveState()
+          : await client.getState();
       _stateService.updateState(state: state);
       _handleStateTransition(state);
 
       if (state.isActive &&
           state.currentSlot != 0 &&
           _stateService.currentQuestion?.slot != state.currentSlot) {
-        final qMap = await client.getQuestion(state.currentSlot);
-        _stateService.updateState(
-            state: state, question: _mapToQuestion(qMap));
+        if (client == null) {
+          final question = await _quizRepo.getLiveQuestion(state.currentSlot);
+          if (question != null) {
+            _stateService.updateState(state: state, question: question);
+          }
+        } else {
+          final qMap = await client.getQuestion(state.currentSlot);
+          _stateService.updateState(
+              state: state, question: _mapToQuestion(qMap));
+        }
       }
 
-      final sc = await client.getScores();
+      final sc = client == null
+          ? await _quizRepo.loadScores()
+          : await client.getScores();
       _stateService.updateScores(sc);
       _error = null;
     } catch (e) {

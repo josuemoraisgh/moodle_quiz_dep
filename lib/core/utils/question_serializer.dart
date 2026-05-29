@@ -109,8 +109,7 @@ class QuestionSerializer {
       };
 
   static MatchData _matchFromJson(Map<String, dynamic> j) => MatchData(
-        subQuestions:
-            _list(j['sub_questions']).map(_subQFromJson).toList(),
+        subQuestions: _list(j['sub_questions']).map(_subQFromJson).toList(),
         options: _list(j['options']).map(_choiceFromJson).toList(),
       );
 
@@ -165,8 +164,7 @@ class QuestionSerializer {
             .toList(),
       };
 
-  static DdMarkerData _ddMarkerFromJson(Map<String, dynamic> j) =>
-      DdMarkerData(
+  static DdMarkerData _ddMarkerFromJson(Map<String, dynamic> j) => DdMarkerData(
         backgroundImageUrl: j['background_image_url'] as String? ?? '',
         choices: _list(j['choices'])
             .map((c) => DdMarkerChoice(

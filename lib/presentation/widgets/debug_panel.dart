@@ -46,7 +46,8 @@ class _DebugPanelState extends State<DebugPanel> {
   }
 
   void _copyLogs() {
-    final text = DebugLogger.instance.entries.map((e) => e.toString()).join('\n');
+    final text =
+        DebugLogger.instance.entries.map((e) => e.toString()).join('\n');
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -101,25 +102,31 @@ class _DebugPanelState extends State<DebugPanel> {
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.copy, color: Colors.white54, size: 18),
+                    icon:
+                        const Icon(Icons.copy, color: Colors.white54, size: 18),
                     onPressed: _copyLogs,
                     tooltip: 'Copiar logs',
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_sweep, color: Colors.white54, size: 18),
+                    icon: const Icon(Icons.delete_sweep,
+                        color: Colors.white54, size: 18),
                     onPressed: () => DebugLogger.instance.clear(),
                     tooltip: 'Limpar logs',
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white54, size: 18),
+                    icon: const Icon(Icons.close,
+                        color: Colors.white54, size: 18),
                     onPressed: () => setState(() => _expanded = false),
                     tooltip: 'Minimizar',
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                 ],
               ),
@@ -217,7 +224,8 @@ class _LogEntryWidget extends StatelessWidget {
                   style: TextStyle(
                     color: entry.message.contains('✗')
                         ? Colors.redAccent
-                        : entry.message.contains('✓') || entry.message.contains('CORRETO')
+                        : entry.message.contains('✓') ||
+                                entry.message.contains('CORRETO')
                             ? Colors.greenAccent
                             : entry.message.contains('⚠')
                                 ? Colors.orangeAccent
