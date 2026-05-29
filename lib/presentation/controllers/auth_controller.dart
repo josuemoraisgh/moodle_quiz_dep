@@ -1,49 +1,48 @@
 import 'package:flutter/foundation.dart';
 
-import '../../domain/entities/user_entity.dart';
-import '../../domain/repositories/i_auth_repository.dart';
-import '../../domain/usecases/login_usecase.dart';
+import '../../domain/entities/app_settings_entity.dart';
+import '../../domain/entities/local_user_entity.dart';
+import '../../domain/entities/student_entity.dart';
+import '../../domain/repositories/i_local_auth_repository.dart';
 
-/// Gerencia estado de autenticação – S: apenas auth.
+/// Gerencia autenticação local – sem Moodle ou internet.
 class AuthController extends ChangeNotifier {
-  final LoginUseCase _loginUseCase;
-  final IAuthRepository _repository;
+  final ILocalAuthRepository _repo;
 
-  UserEntity? _user;
+  LocalUserEntity? _user;
+  AppSettingsEntity _settings = AppSettingsEntity.defaults();
+  List<StudentEntity> _students = [];
   bool _isLoading = false;
   String? _error;
 
-  AuthController({
-    required LoginUseCase loginUseCase,
-    required IAuthRepository repository,
-  })  : _loginUseCase = loginUseCase,
-        _repository = repository;
+  AuthController(this._repo);
 
-  UserEntity? get user => _user;
+  LocalUserEntity? get user => _user;
+  AppSettingsEntity get settings => _settings;
+  List<StudentEntity> get students => _students;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isLoggedIn => _user != null;
 
-  /// Tenta restaurar sessão salva.
-  Future<void> loadSavedSession() async {
-    _user = await _repository.loadSession();
+  /// Inicialização: carrega configurações, lista de alunos e sessão salva.
+  Future<void> init() async {
+    _settings = await _repo.getSettings();
+    _students = await _repo.getStudents();
+    _user = await _repo.loadSession();
     notifyListeners();
   }
 
-  Future<void> login({
-    required String baseUrl,
-    required String username,
-    required String password,
-  }) async {
+  Future<void> login({required String name, required String password}) async {
     _setLoading(true);
     _error = null;
     try {
-      _user = await _loginUseCase(
-        baseUrl: baseUrl,
-        username: username,
-        password: password,
-      );
-      await _repository.saveSession(_user!);
+      final user = await _repo.login(name: name, password: password);
+      if (user == null) {
+        _error = 'Usuário ou senha incorretos.';
+      } else {
+        _user = user;
+        await _repo.saveSession(user);
+      }
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -52,8 +51,27 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await _repository.clearSession();
+    await _repo.clearSession();
     _user = null;
+    notifyListeners();
+  }
+
+  Future<void> saveSettings(AppSettingsEntity settings) async {
+    await _repo.saveSettings(settings);
+    _settings = settings;
+    notifyListeners();
+  }
+
+  Future<void> saveStudents(List<String> names) async {
+    await _repo.saveStudents(names);
+    _students = await _repo.getStudents();
+    notifyListeners();
+  }
+
+  /// Recarrega dados do banco (após setup).
+  Future<void> reload() async {
+    _settings = await _repo.getSettings();
+    _students = await _repo.getStudents();
     notifyListeners();
   }
 

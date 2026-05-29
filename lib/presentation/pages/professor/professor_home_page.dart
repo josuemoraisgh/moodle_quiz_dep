@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../core/router/app_router.dart';
@@ -43,17 +44,13 @@ class _ProfessorHomePageState extends State<ProfessorHomePage> {
           _showQuestionThumbnails = _prof.showQuestionThumbnails;
         });
       }
-      _prof.startPolling();
     });
   }
 
-  /// Quando a questão passa de ativa → encerrada, avança automaticamente
-  /// para a próxima questão na lista (se existir).
   void _selectQuestion(ProfessorController prof, int index) {
     if (index < 0 || index >= prof.questions.length) return;
     prof.setSelectedQuestionIndex(index);
     setState(() => _questionIndex = index);
-    prof.logQuestionDiagnostics(prof.questions[index], index);
   }
 
   void _moveQuestion(ProfessorController prof, int delta) {
@@ -65,7 +62,6 @@ class _ProfessorHomePageState extends State<ProfessorHomePage> {
 
   @override
   void dispose() {
-    _prof.stopPolling();
     super.dispose();
   }
 
@@ -251,10 +247,7 @@ class _ProfessorAppBar extends StatelessWidget {
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: AppTheme.textSecondary, size: 20),
             tooltip: 'Voltar para seleção de questionário',
-            onPressed: () {
-              prof.stopPolling();
-              context.go(AppRouter.professorQuiz);
-            },
+            onPressed: () => context.go(AppRouter.professorQuiz),
           ),
           Container(
             padding: const EdgeInsets.all(8),
@@ -280,12 +273,6 @@ class _ProfessorAppBar extends StatelessWidget {
           ),
           const FullscreenButton(),
           IconButton(
-            icon: const Icon(Icons.qr_code_2_rounded,
-                color: AppTheme.textSecondary),
-            tooltip: 'QR Code do Aluno',
-            onPressed: () => context.go(AppRouter.professorQrCode),
-          ),
-          IconButton(
             icon: const Icon(Icons.fact_check_rounded, color: AppTheme.accent),
             tooltip: 'Mostrar Gabarito',
             onPressed: prof.questions.isEmpty
@@ -307,7 +294,6 @@ class _ProfessorAppBar extends StatelessWidget {
             icon: const Icon(Icons.logout, color: AppTheme.textSecondary),
             tooltip: 'Sair',
             onPressed: () async {
-              prof.stopPolling();
               await auth.logout();
               if (context.mounted) context.go(AppRouter.login);
             },
@@ -731,48 +717,6 @@ class _ControlPanelState extends State<_ControlPanel> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: prof.isLoading
-                      ? null
-                      : () => prof.runConnectionDiagnostics(
-                            question: selectedQ,
-                            index: selectedIndex,
-                          ),
-                  icon: const Icon(Icons.wifi_tethering_rounded,
-                      color: AppTheme.accent, size: 18),
-                  label: const Text('Testar conexão/logs',
-                      style: TextStyle(color: AppTheme.accent)),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppTheme.accent),
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: selectedQ == null
-                      ? null
-                      : () => prof.logQuestionDiagnostics(
-                            selectedQ,
-                            selectedIndex,
-                          ),
-                  icon: const Icon(Icons.bug_report_rounded,
-                      color: AppTheme.warning, size: 18),
-                  label: const Text('Diagnosticar questão',
-                      style: TextStyle(color: AppTheme.warning)),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppTheme.warning),
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
                   onPressed:
                       prof.isLoading ? null : () => _confirmReset(context, prof),
                   icon: const Icon(Icons.refresh_rounded,
@@ -990,24 +934,43 @@ class _CompactQrCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Image.asset(
-          'assets/qrcode.png',
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => const Icon(
-            Icons.qr_code_2_rounded,
-            color: AppTheme.textSecondary,
-            size: 96,
+    return Consumer<ProfessorController>(
+      builder: (_, p, __) => _QrBox(url: p.serverUrl),
+    );
+  }
+}
+
+class _QrBox extends StatelessWidget {
+  final String url;
+  const _QrBox({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: QrImageView(
+            data: url,
+            version: QrVersions.auto,
+            size: 100,
+            gapless: true,
           ),
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(
+          url,
+          style: const TextStyle(
+              color: AppTheme.textSecondary, fontSize: 10),
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 }

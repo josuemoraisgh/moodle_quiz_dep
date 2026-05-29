@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moodle_quiz_live/presentation/widgets/moodle_html_renderer.dart';
+import 'package:moodle_quiz_dep/presentation/widgets/moodle_html_renderer.dart';
 
 void main() {
   testWidgets('renders Moodle TeX images as equations', (tester) async {

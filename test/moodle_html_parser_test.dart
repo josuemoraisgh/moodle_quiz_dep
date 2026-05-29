@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moodle_quiz_live/core/utils/moodle_html_parser.dart';
+import 'package:moodle_quiz_dep/core/utils/moodle_html_parser.dart';
 
 void main() {
   group('MoodleHtmlParser', () {

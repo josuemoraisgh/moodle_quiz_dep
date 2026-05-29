@@ -1,29 +1,22 @@
-/// Configurações globais carregadas de assets/config.json.
-/// S: Responsabilidade única – apenas armazena config.
+/// Configurações globais – sem dependência de Moodle ou internet.
 class AppConfig {
-  static const String appName = 'MoodleQuiz Live';
-  static const String version = '1.0.0';
+  static const String appName = 'Quiz Presencial';
+  static const String version = '2.0.0';
 
-  // ── Infraestrutura ──────────────────────────────────────────────────────
-  static String studentUrl = 'https://lasec-ufu.github.io/MoodleQuiz/';
-
-  // ── Configurações do quiz (vindas do config.json) ───────────────────────
-  static String moodleBaseUrl = '';
-  static String quizTitle = 'Quiz Interativo';
-  static int defaultQuestionTime = 30;
-  static List<int> questionTimeOptions = [15, 20, 30, 45, 60, 90, 120];
-
-  // ── Modo local (S23 com Ethernet + 3G) ──────────────────────────────────
-  // Quando true: professor sobe servidor HTTP local; alunos usam esse servidor
-  // para estado/pontuações em vez de chamar o Moodle a cada segundo.
-  static bool localMode = false;
+  /// Porta do servidor HTTP local do professor (Wi-Fi em sala).
   static int localServerPort = 8080;
 
-  /// Carrega todos os campos do mapa (config.json).
+  /// Opções de tempo por questão (segundos).
+  static List<int> questionTimeOptions = [15, 20, 30, 45, 60, 90, 120];
+
+  /// Tempo padrão por questão.
+  static int defaultQuestionTime = 30;
+
+  /// Carrega campos opcionais de assets/config.json (se presente).
   static void loadFromMap(Map<String, dynamic> config) {
-    studentUrl = (config['student_url'] as String?)?.trim() ?? studentUrl;
-    moodleBaseUrl = (config['moodle_url'] as String?)?.trim() ?? moodleBaseUrl;
-    quizTitle = (config['quiz_title'] as String?) ?? quizTitle;
+    localServerPort =
+        int.tryParse(config['server_port']?.toString() ?? '') ??
+            localServerPort;
     defaultQuestionTime =
         int.tryParse(config['default_question_time']?.toString() ?? '') ??
             defaultQuestionTime;
@@ -37,13 +30,5 @@ class AppConfig {
           .toList();
       if (parsed.isNotEmpty) questionTimeOptions = parsed;
     }
-
-    localMode = config['local_mode'] == true;
-    localServerPort =
-        int.tryParse(config['local_server_port']?.toString() ?? '') ??
-            localServerPort;
   }
-
-  static bool get isConfigured => true;
-  static bool get isMoodleConfigured => moodleBaseUrl.isNotEmpty;
 }

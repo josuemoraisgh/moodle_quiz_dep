@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moodle_quiz_live/core/utils/moodle_xml_quiz_parser.dart';
+import 'package:moodle_quiz_dep/core/utils/moodle_xml_quiz_parser.dart';
 
 void main() {
   test('parses Moodle XML export into the shared question engine model', () {

@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/config/app_config.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive.dart';
 import '../controllers/auth_controller.dart';
 
-/// Tela de login Moodle – responsiva (mobile e desktop).
+/// Tela de login offline:
+///   • Professor seleciona "Professor" + digita a senha de professor.
+///   • Aluno seleciona o próprio nome no dropdown + digita a senha única.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -17,35 +18,31 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _urlCtrl = TextEditingController(text: AppConfig.moodleBaseUrl);
-  final _userCtrl = TextEditingController();
+  static const _professorLabel = 'Professor';
+
   final _passCtrl = TextEditingController();
+  String? _selectedName;
   bool _obscurePass = true;
 
   @override
   void dispose() {
-    _urlCtrl.dispose();
-    _userCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
+    final name = _selectedName;
+    if (name == null || name.isEmpty || _passCtrl.text.isEmpty) return;
+
     final auth = context.read<AuthController>();
-    await auth.login(
-      baseUrl: _urlCtrl.text.trim().replaceAll(RegExp(r'/+$'), ''),
-      username: _userCtrl.text.trim(),
-      password: _passCtrl.text,
-    );
+    await auth.login(name: name, password: _passCtrl.text);
     if (!mounted) return;
     if (auth.error != null) return;
 
     if (auth.user!.isTeacher) {
-      if (mounted) context.go(AppRouter.professorCourses);
+      context.go(AppRouter.professorQuiz);
     } else {
-      if (mounted) context.go(AppRouter.studentCourses);
+      context.go(AppRouter.studentLobby);
     }
   }
 
@@ -60,67 +57,90 @@ class _LoginPageState extends State<LoginPage> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
               child: Consumer<AuthController>(
-                builder: (context, auth, _) => Form(
-                  key: _formKey,
-                  child: Column(
+                builder: (context, auth, _) {
+                  // Primeira execução: ainda sem senhas configuradas.
+                  if (auth.settings.isFirstRun) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) context.go(AppRouter.professorSetup);
+                    });
+                    return const Center(
+                        child: CircularProgressIndicator());
+                  }
+
+                  final names = [
+                    _professorLabel,
+                    ...auth.students.map((s) => s.name),
+                  ];
+
+                  return Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const _AppLogo(),
                       const SizedBox(height: 16),
-                      Text('MoodleQuiz Live',
-                          style: AppTheme.headlineLarge,
-                          textAlign: TextAlign.center),
+                      Text(
+                        auth.settings.quizTitle,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Entre com suas credenciais do Moodle',
+                        'Selecione seu nome e entre com a senha',
                         style: TextStyle(
                             color: AppTheme.textSecondary, fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 40),
 
-                      // ── URL do Moodle ────────────────────────────────────
-                      TextFormField(
-                        controller: _urlCtrl,
-                        style: const TextStyle(color: AppTheme.textPrimary),
-                        keyboardType: TextInputType.url,
+                      // ── Dropdown de nome ──────────────────────────────────
+                      DropdownButtonFormField<String>(
+                        initialValue: _selectedName,
                         decoration: const InputDecoration(
-                          labelText: 'URL do Moodle',
-                          prefixIcon: Icon(Icons.public),
-                          hintText: 'https://moodle.suainstituicao.edu.br',
-                          hintStyle: TextStyle(color: AppTheme.textSecondary),
-                        ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Informe a URL do Moodle';
-                          }
-                          if (!v.startsWith('http')) {
-                            return 'URL deve começar com http';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // ── Usuário ──────────────────────────────────────────
-                      TextFormField(
-                        controller: _userCtrl,
-                        style: const TextStyle(color: AppTheme.textPrimary),
-                        decoration: const InputDecoration(
-                          labelText: 'Usuário',
+                          labelText: 'Nome',
                           prefixIcon: Icon(Icons.person_outline),
                         ),
-                        validator: (v) => (v?.trim().isEmpty ?? true)
-                            ? 'Informe o usuário'
-                            : null,
+                        dropdownColor: AppTheme.bgCard,
+                        style: const TextStyle(
+                            color: AppTheme.textPrimary, fontSize: 15),
+                        hint: const Text('Selecione…',
+                            style: TextStyle(
+                                color: AppTheme.textSecondary)),
+                        items: names
+                            .map((n) => DropdownMenuItem(
+                                  value: n,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        n == _professorLabel
+                                            ? Icons.school_rounded
+                                            : Icons.person_rounded,
+                                        color: n == _professorLabel
+                                            ? AppTheme.accent
+                                            : AppTheme.textSecondary,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(n),
+                                    ],
+                                  ),
+                                ))
+                            .toList(),
+                        onChanged: (v) => setState(() {
+                          _selectedName = v;
+                          _passCtrl.clear();
+                        }),
                       ),
                       const SizedBox(height: 16),
 
-                      // ── Senha ────────────────────────────────────────────
+                      // ── Senha ─────────────────────────────────────────────
                       TextFormField(
                         controller: _passCtrl,
-                        style: const TextStyle(color: AppTheme.textPrimary),
                         obscureText: _obscurePass,
+                        style: const TextStyle(
+                            color: AppTheme.textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Senha',
                           prefixIcon: const Icon(Icons.lock_outline),
@@ -129,36 +149,62 @@ class _LoginPageState extends State<LoginPage> {
                                 ? Icons.visibility_off
                                 : Icons.visibility),
                             color: AppTheme.textSecondary,
-                            onPressed: () =>
-                                setState(() => _obscurePass = !_obscurePass),
+                            onPressed: () => setState(
+                                () => _obscurePass = !_obscurePass),
                           ),
                         ),
-                        validator: (v) =>
-                            (v?.isEmpty ?? true) ? 'Informe a senha' : null,
+                        onFieldSubmitted: (_) => _login(),
                       ),
 
-                      // ── Erro ─────────────────────────────────────────────
                       if (auth.error != null) ...[
                         const SizedBox(height: 16),
                         _ErrorBox(message: auth.error!),
                       ],
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
-                      // ── Botão login ──────────────────────────────────────
-                      ElevatedButton(
-                        onPressed: auth.isLoading ? null : _login,
-                        child: auth.isLoading
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2.5))
-                            : const Text('Entrar'),
+                      // ── Botão entrar ──────────────────────────────────────
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: (auth.isLoading ||
+                                  _selectedName == null ||
+                                  _passCtrl.text.isEmpty)
+                              ? null
+                              : _login,
+                          child: auth.isLoading
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5),
+                                )
+                              : const Text('Entrar',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+                      TextButton.icon(
+                        onPressed: () =>
+                            context.go(AppRouter.professorSetup),
+                        icon: const Icon(Icons.settings_rounded,
+                            size: 16,
+                            color: AppTheme.textSecondary),
+                        label: const Text(
+                          'Configurar quiz',
+                          style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13),
+                        ),
                       ),
                     ],
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           ),
@@ -170,6 +216,7 @@ class _LoginPageState extends State<LoginPage> {
 
 class _AppLogo extends StatelessWidget {
   const _AppLogo();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -183,7 +230,7 @@ class _AppLogo extends StatelessWidget {
             color: AppTheme.primary.withValues(alpha: 0.5),
             blurRadius: 24,
             spreadRadius: 2,
-          )
+          ),
         ],
       ),
       child: const Icon(Icons.quiz_rounded, color: Colors.white, size: 48),
@@ -202,15 +249,18 @@ class _ErrorBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.danger.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.danger.withValues(alpha: 0.4)),
+        border: Border.all(
+            color: AppTheme.danger.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: AppTheme.danger, size: 20),
+          const Icon(Icons.error_outline,
+              color: AppTheme.danger, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(message,
-                style: const TextStyle(color: AppTheme.danger, fontSize: 13)),
+                style: const TextStyle(
+                    color: AppTheme.danger, fontSize: 13)),
           ),
         ],
       ),
