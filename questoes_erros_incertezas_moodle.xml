@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="category"><category><text>$course$/Erros e Incertezas - Metrologia</text></category></question>
+  <question type="multichoice">
+    <name><text>Q01 - Diagnóstico de bias em transmissor de pressão</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Durante a calibração de um transmissor de pressão de 0 a 100 bar, cinco pontos de referência foram aplicados em bancada. Em todos os pontos, a indicação ficou aproximadamente 1,8 bar acima do padrão, enquanto a dispersão entre repetições foi menor que 0,15 bar. A planta opera próxima ao limite de segurança do processo.</p><p>Qual interpretação técnica é mais adequada?</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>O raciocínio deve distinguir erro, correção e incerteza. Erro é diferença em relação ao valor de referência; incerteza é intervalo de dúvida associado ao resultado. No GUM, contribuições independentes são combinadas por RSS: \(u_c=\sqrt{\sum(c_i u_i)^2}\).</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>abc</answernumbering><showstandardinstruction>0</showstandardinstruction>
+    <correctfeedback format="html"><text><![CDATA[Correto.]]></text></correctfeedback><partiallycorrectfeedback format="html"><text><![CDATA[Parcialmente correto.]]></text></partiallycorrectfeedback><incorrectfeedback format="html"><text><![CDATA[Revise o raciocínio metrológico.]]></text></incorrectfeedback>
+    <answer fraction="100" format="html"><text><![CDATA[Há forte evidência de erro sistemático; a ação adequada é corrigir/calibrar antes de confiar na indicação em operação crítica.]]> </text><feedback format="html"><text><![CDATA[Deslocamento constante é bias.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[O erro é predominantemente aleatório; basta aumentar o número de medições para reduzir o desvio de +1,8 bar.]]> </text><feedback format="html"><text><![CDATA[Médias não eliminam bias.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[O caso caracteriza erro grosseiro e todos os dados devem ser descartados sem avaliação de calibração.]]> </text><feedback format="html"><text><![CDATA[Não há ponto isolado aberrante.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[A precisão é necessariamente baixa, pois existe erro positivo em todos os pontos.]]> </text><feedback format="html"><text><![CDATA[Precisão está ligada à dispersão.]]> </text></feedback></answer>
+  </question>
+  <question type="calculated">
+    <name><text>Q02 - Erro percentual em relação ao span</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Um indicador de nível com faixa de {L} a {H} cm é testado em um ponto de referência de {R} cm. Após estabilização, o instrumento indica {M} cm.</p><p>Calcule o erro estático em porcentagem do <i>span</i>, com sinal algébrico.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Use \(E_{\%span}=\frac{M-R}{H-L}	imes100\). O sinal positivo indica leitura acima do padrão.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <synchronize>0</synchronize><single>0</single><answernumbering>abc</answernumbering>
+    <answer fraction="100" format="moodle_auto_format"><text>({M}-{R})/({H}-{L})*100</text><tolerance>0.05</tolerance><tolerancetype>1</tolerancetype><correctanswerformat>1</correctanswerformat><correctanswerlength>3</correctanswerlength><feedback format="html"><text><![CDATA[Aplicação numérica correta.]]></text></feedback></answer>
+    <dataset_definitions>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>L</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>0</text></minimum><maximum><text>50</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>0</value></dataset_item>
+          <dataset_item><number>2</number><value>10</value></dataset_item>
+          <dataset_item><number>3</number><value>20</value></dataset_item>
+          <dataset_item><number>4</number><value>0</value></dataset_item>
+          <dataset_item><number>5</number><value>50</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>H</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>100</text></minimum><maximum><text>220</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>100</value></dataset_item>
+          <dataset_item><number>2</number><value>110</value></dataset_item>
+          <dataset_item><number>3</number><value>220</value></dataset_item>
+          <dataset_item><number>4</number><value>200</value></dataset_item>
+          <dataset_item><number>5</number><value>150</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>R</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>60</text></minimum><maximum><text>140</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>60</value></dataset_item>
+          <dataset_item><number>2</number><value>75</value></dataset_item>
+          <dataset_item><number>3</number><value>140</value></dataset_item>
+          <dataset_item><number>4</number><value>120</value></dataset_item>
+          <dataset_item><number>5</number><value>90</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>M</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>61.4</text></minimum><maximum><text>143.2</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>61.4</value></dataset_item>
+          <dataset_item><number>2</number><value>73.8</value></dataset_item>
+          <dataset_item><number>3</number><value>143.2</value></dataset_item>
+          <dataset_item><number>4</number><value>118.6</value></dataset_item>
+          <dataset_item><number>5</number><value>91.1</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+    </dataset_definitions>
+  </question>
+  <question type="matching">
+    <name><text>Q03 - Evidência observada e classificação metrológica</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Associe cada evidência observada em laboratório à classificação mais adequada.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>O raciocínio deve distinguir erro, correção e incerteza. Erro é diferença em relação ao valor de referência; incerteza é intervalo de dúvida associado ao resultado. No GUM, contribuições independentes são combinadas por RSS: \(u_c=\sqrt{\sum(c_i u_i)^2}\).</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <correctfeedback format="html"><text><![CDATA[Correto.]]></text></correctfeedback><partiallycorrectfeedback format="html"><text><![CDATA[Há pares corretos e incorretos.]]></text></partiallycorrectfeedback><incorrectfeedback format="html"><text><![CDATA[Revise as definições.]]></text></incorrectfeedback>
+    <subquestion format="html"><text><![CDATA[Leituras oscilam em torno da média, sem sinal constante.]]> </text><answer><text>Erro aleatório</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[Todas as leituras ficam 0,4 °C acima do padrão.]]> </text><answer><text>Erro sistemático</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[Um único valor é incompatível por falha de transcrição.]]> </text><answer><text>Erro grosseiro</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[A tendência aumenta gradualmente ao longo dos meses.]]> </text><answer><text>Deriva</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[Medições repetidas no mesmo operador, instrumento, local e curto intervalo.]]> </text><answer><text>Repetitividade</text></answer></subquestion>
+  </question>
+  <question type="numerical">
+    <name><text>Q04 - Correção de balança com erro sistemático</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Uma balança indica sistematicamente 0,50 g acima do valor convencional. Em uma pesagem de rotina, a indicação foi 248,36 g.</p><p>Informe a massa corrigida, em gramas.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Correção: \(X_{corr}=X_{med}-E_s=248,36-0,50=247,86\;g\).</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <unitgradingtype>0</unitgradingtype><unitpenalty>0.1000000</unitpenalty><showunits>3</showunits><unitsleft>0</unitsleft>
+    <answer fraction="100" format="moodle_auto_format"><text>247.86</text><tolerance>0.01</tolerance><feedback format="html"><text><![CDATA[Valor dentro da tolerância.]]></text></feedback></answer>
+  </question>
+  <question type="gapselect">
+    <name><text>Q05 - Tipo A, Tipo B e natureza do erro</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Complete a análise técnica: em um ensaio de temperatura, a dispersão entre medições repetidas está associada à [[1]], enquanto o deslocamento persistente da média em relação ao padrão caracteriza [[2]]. Segundo o GUM, a estimativa baseada em repetição estatística é do tipo [[3]], e a baseada em certificado de calibração é do tipo [[4]].</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Tipo A vem de análise estatística dos dados; Tipo B vem de outras informações, como certificados, especificações e experiência prévia.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <selectoption><text>erro aleatório</text><group>1</group></selectoption>
+    <selectoption><text>erro sistemático</text><group>1</group></selectoption>
+    <selectoption><text>Tipo A</text><group>1</group></selectoption>
+    <selectoption><text>Tipo B</text><group>1</group></selectoption>
+    <selectoption><text>erro grosseiro</text><group>1</group></selectoption>
+    <selectoption><text>deriva térmica</text><group>1</group></selectoption>
+  </question>
+  <question type="calculatedmulti">
+    <name><text>Q06 - Incerteza expandida a partir de uc e k</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Em uma calibração de voltímetro, obteve-se incerteza combinada <b>{uc} V</b>. Para o nível de confiança adotado, o fator de abrangência é <b>{k}</b>.</p><p>Qual alternativa representa a incerteza expandida?</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>A incerteza expandida é \(U=k\cdot u_c\). Ela deve ser declarada com unidade e nível de confiança.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <synchronize>0</synchronize><single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>abc</answernumbering>
+    <answer fraction="100" format="html"><text><![CDATA[{uc}*{k}]]> </text><feedback format="html"><text><![CDATA[Correto: U = k uc.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[{uc}+{k}]]> </text><feedback format="html"><text><![CDATA[Soma direta não possui significado metrológico.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[{uc}/{k}]]> </text><feedback format="html"><text><![CDATA[Dividir por k reduziria indevidamente a faixa expandida.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[sqrt({uc}^2+{k}^2)]]> </text><feedback format="html"><text><![CDATA[k não é contribuição de incerteza.]]> </text></feedback></answer>
+    <dataset_definitions>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>uc</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>0.032</text></minimum><maximum><text>0.336</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>0.032</value></dataset_item>
+          <dataset_item><number>2</number><value>0.046</value></dataset_item>
+          <dataset_item><number>3</number><value>0.118</value></dataset_item>
+          <dataset_item><number>4</number><value>0.205</value></dataset_item>
+          <dataset_item><number>5</number><value>0.336</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>k</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>1.65</text></minimum><maximum><text>2.58</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>2.0</value></dataset_item>
+          <dataset_item><number>2</number><value>1.96</value></dataset_item>
+          <dataset_item><number>3</number><value>2.01</value></dataset_item>
+          <dataset_item><number>4</number><value>2.58</value></dataset_item>
+          <dataset_item><number>5</number><value>1.65</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+    </dataset_definitions>
+  </question>
+  <question type="ddwtos">
+    <name><text>Q07 - Arraste os termos para o fluxo de tratamento dos dados</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Complete o fluxo técnico de uma medição com rastreabilidade metrológica:</p><p>1. Coletar leituras repetidas → 2. [[1]] → 3. [[2]] → 4. [[3]] → 5. [[4]] → 6. Declarar resultado final.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>O fluxo correto evita misturar correção de erro conhecido com estimativa de incerteza residual.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <dragbox><text>eliminar erros grosseiros</text><group>1</group><no>1</no><infinite>false</infinite></dragbox>
+    <dragbox><text>corrigir erro sistemático identificado</text><group>1</group><no>2</no><infinite>false</infinite></dragbox>
+    <dragbox><text>combinar incertezas padrão</text><group>1</group><no>3</no><infinite>false</infinite></dragbox>
+    <dragbox><text>expandir por k</text><group>1</group><no>4</no><infinite>false</infinite></dragbox>
+    <dragbox><text>aumentar o bias</text><group>1</group><no>5</no><infinite>false</infinite></dragbox>
+    <dragbox><text>ignorar resolução</text><group>1</group><no>6</no><infinite>false</infinite></dragbox>
+  </question>
+  <question type="ordering">
+    <name><text>Q08 - Ordem das etapas do ISO GUM</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Ordene as etapas abaixo conforme uma aplicação coerente do ISO GUM em um ensaio de calibração.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>A sequência parte da definição do mensurando, passa pelo modelo, fontes, quantificação, combinação e declaração do resultado.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <layouttype>0</layouttype><selecttype>0</selecttype><selectcount>0</selectcount><gradingtype>relative_all_previous_and_next</gradingtype><showgrading>0</showgrading><numberingstyle>none</numberingstyle><shuffleanswers>true</shuffleanswers>
+    <answer fraction="0" format="html"><text><![CDATA[Definir claramente o mensurando e as condições de medição]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Estabelecer o modelo matemático y=f(x1,x2,...)]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Identificar fontes de incerteza relevantes]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Quantificar incertezas padrão Tipo A e Tipo B]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Calcular coeficientes de sensibilidade]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Combinar as contribuições em uc]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Determinar k e incerteza expandida U]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Declarar o resultado completo y ± U]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+  </question>
+  <question type="multichoice">
+    <name><text>Q09 - Precisão alta com baixa exatidão</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Um sensor de temperatura registra, em cinco repetições de um banho térmico a 80,00 °C: 80,42; 80,41; 80,43; 80,42; 80,41 °C. O laboratório precisa decidir se o problema principal é precisão ou exatidão.</p><p>Qual conclusão é mais defensável?</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Os valores são muito próximos entre si, logo há boa precisão/repetitividade. Porém, a média está afastada do valor de referência, indicando baixa exatidão por bias.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>abc</answernumbering><showstandardinstruction>0</showstandardinstruction>
+    <correctfeedback format="html"><text><![CDATA[Correto.]]></text></correctfeedback><partiallycorrectfeedback format="html"><text><![CDATA[Parcialmente correto.]]></text></partiallycorrectfeedback><incorrectfeedback format="html"><text><![CDATA[Revise o raciocínio metrológico.]]></text></incorrectfeedback>
+    <answer fraction="100" format="html"><text><![CDATA[Alta precisão e baixa exatidão, pois a dispersão é pequena, mas há deslocamento sistemático.]]> </text><feedback format="html"><text><![CDATA[Correto.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Baixa precisão e alta exatidão, pois os valores estão muito próximos entre si.]]> </text><feedback format="html"><text><![CDATA[Proximidade entre si é precisão, não exatidão.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Erro grosseiro, pois todos os valores estão acima de 80 °C.]]> </text><feedback format="html"><text><![CDATA[Não há valor isolado aberrante.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Erro aleatório dominante, pois o sinal do erro é sempre positivo.]]> </text><feedback format="html"><text><![CDATA[Sinal constante sugere bias.]]> </text></feedback></answer>
+  </question>
+  <question type="calculated">
+    <name><text>Q10 - Incerteza padrão Tipo A</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Em medições repetidas de comprimento, o desvio padrão amostral foi {s} mm para {n} leituras independentes. Calcule a incerteza padrão Tipo A da média, em mm.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Para avaliação Tipo A da média: \(u_A=s/\sqrt{n}\). Não se usa apenas s, pois a média de n leituras reduz a incerteza estatística.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <synchronize>0</synchronize><single>0</single><answernumbering>abc</answernumbering>
+    <answer fraction="100" format="moodle_auto_format"><text>{s}/sqrt({n})</text><tolerance>0.001</tolerance><tolerancetype>1</tolerancetype><correctanswerformat>1</correctanswerformat><correctanswerlength>3</correctanswerlength><feedback format="html"><text><![CDATA[Aplicação numérica correta.]]></text></feedback></answer>
+    <dataset_definitions>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>s</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>0.12</text></minimum><maximum><text>0.45</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>0.12</value></dataset_item>
+          <dataset_item><number>2</number><value>0.18</value></dataset_item>
+          <dataset_item><number>3</number><value>0.25</value></dataset_item>
+          <dataset_item><number>4</number><value>0.32</value></dataset_item>
+          <dataset_item><number>5</number><value>0.45</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>n</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>4</text></minimum><maximum><text>12</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>4</value></dataset_item>
+          <dataset_item><number>2</number><value>5</value></dataset_item>
+          <dataset_item><number>3</number><value>8</value></dataset_item>
+          <dataset_item><number>4</number><value>10</value></dataset_item>
+          <dataset_item><number>5</number><value>12</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+    </dataset_definitions>
+  </question>
+  <question type="matching">
+    <name><text>Q11 - Distribuição assumida e fórmula de incerteza padrão</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Associe a informação disponível à forma usual de obter a incerteza padrão.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Distribuições diferentes representam conhecimento diferente sobre a fonte. Retangular: qualquer valor no intervalo é plausível; triangular: valores centrais são mais prováveis; normal de certificado: usa-se U/k.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <correctfeedback format="html"><text><![CDATA[Correto.]]></text></correctfeedback><partiallycorrectfeedback format="html"><text><![CDATA[Há pares corretos e incorretos.]]></text></partiallycorrectfeedback><incorrectfeedback format="html"><text><![CDATA[Revise as definições.]]></text></incorrectfeedback>
+    <subquestion format="html"><text><![CDATA[Tolerância ±a sem informação adicional sobre probabilidade interna.]]> </text><answer><text>a/√3</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[Tolerância ±a com maior probabilidade próxima ao centro.]]> </text><answer><text>a/√6</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[Certificado informa incerteza expandida U com fator k.]]> </text><answer><text>U/k</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[Medições repetidas com desvio padrão amostral s e n leituras.]]> </text><answer><text>s/√n</text></answer></subquestion>
+  </question>
+  <question type="numerical">
+    <name><text>Q12 - Incerteza padrão de resolução digital</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Um indicador digital possui resolução de 0,02 V. Admitindo erro de arredondamento limitado a meia resolução e distribuição retangular, calcule a incerteza padrão em V.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Meia resolução: \(a=0,01\;V\). Para distribuição retangular: \(u=a/\sqrt{3}=0,01/\sqrt{3}=0,00577\;V\).</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <unitgradingtype>0</unitgradingtype><unitpenalty>0.1000000</unitpenalty><showunits>3</showunits><unitsleft>0</unitsleft>
+    <answer fraction="100" format="moodle_auto_format"><text>0.00577</text><tolerance>0.0001</tolerance><feedback format="html"><text><![CDATA[Valor dentro da tolerância.]]></text></feedback></answer>
+  </question>
+  <question type="gapselect">
+    <name><text>Q13 - Resultado completo de medição</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Complete a declaração: uma medição metrologicamente completa deve informar o valor estimado, a [[1]], o [[2]] utilizado e o [[3]] correspondente. Sem essa informação, a comparação com tolerâncias fica tecnicamente incompleta.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>O resultado no GUM deve ser declarado como \(y\pm U\), acompanhado de k e nível de confiança.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <selectoption><text>incerteza expandida</text><group>1</group></selectoption>
+    <selectoption><text>fator de abrangência k</text><group>1</group></selectoption>
+    <selectoption><text>nível de confiança</text><group>1</group></selectoption>
+    <selectoption><text>erro verdadeiro</text><group>1</group></selectoption>
+    <selectoption><text>valor máximo absoluto</text><group>1</group></selectoption>
+    <selectoption><text>número de série</text><group>1</group></selectoption>
+  </question>
+  <question type="calculatedmulti">
+    <name><text>Q14 - Correção por tendência sistemática</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Um termômetro apresentou tendência sistemática de <b>{b} °C</b>, definida como média medida menos valor de referência. Em campo, ele indicou <b>{x} °C</b>.</p><p>Qual valor corrigido deve ser reportado antes da avaliação de incerteza?</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Se o bias é \(b=x_{med}-x_{ref}\), então a correção é subtrair b: \(x_{corr}=x_{indicado}-b\).</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <synchronize>0</synchronize><single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>abc</answernumbering>
+    <answer fraction="100" format="html"><text><![CDATA[{x}-{b}]]> </text><feedback format="html"><text><![CDATA[Correto.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[{x}+{b}]]> </text><feedback format="html"><text><![CDATA[Isso aumentaria o deslocamento.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[{x}*{b}]]> </text><feedback format="html"><text><![CDATA[Não há relação multiplicativa.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[abs({x}-{b})]]> </text><feedback format="html"><text><![CDATA[O valor físico não deve ser transformado em módulo.]]> </text></feedback></answer>
+    <dataset_definitions>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>b</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>-0.4</text></minimum><maximum><text>0.5</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>0.2</value></dataset_item>
+          <dataset_item><number>2</number><value>0.35</value></dataset_item>
+          <dataset_item><number>3</number><value>-0.15</value></dataset_item>
+          <dataset_item><number>4</number><value>0.5</value></dataset_item>
+          <dataset_item><number>5</number><value>-0.4</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>x</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>15.2</text></minimum><maximum><text>100.6</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>35.7</value></dataset_item>
+          <dataset_item><number>2</number><value>80.4</value></dataset_item>
+          <dataset_item><number>3</number><value>22.8</value></dataset_item>
+          <dataset_item><number>4</number><value>100.6</value></dataset_item>
+          <dataset_item><number>5</number><value>15.2</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+    </dataset_definitions>
+  </question>
+  <question type="ddwtos">
+    <name><text>Q15 - Arraste conceitos para interpretação de gráfico de frequência</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Em uma distribuição de frequência de medições, complete a interpretação: deslocamento do centro da distribuição em relação ao valor verdadeiro convencional indica [[1]]; largura da distribuição indica [[2]]; valor isolado distante do conjunto sugere [[3]]; deslocamento gradual do centro ao longo do tempo indica [[4]].</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>O gráfico de frequência permite separar tendência central, dispersão, outliers e comportamento temporal quando se comparam séries sucessivas.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <dragbox><text>bias</text><group>1</group><no>1</no><infinite>false</infinite></dragbox>
+    <dragbox><text>repetitividade</text><group>1</group><no>2</no><infinite>false</infinite></dragbox>
+    <dragbox><text>erro grosseiro</text><group>1</group><no>3</no><infinite>false</infinite></dragbox>
+    <dragbox><text>deriva</text><group>1</group><no>4</no><infinite>false</infinite></dragbox>
+    <dragbox><text>fator k</text><group>1</group><no>5</no><infinite>false</infinite></dragbox>
+    <dragbox><text>span</text><group>1</group><no>6</no><infinite>false</infinite></dragbox>
+  </question>
+  <question type="ordering">
+    <name><text>Q16 - Priorização para reduzir incerteza combinada</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Um balanço de incertezas mostrou contribuições relativas: resolução 74%, calibração 20%, repetitividade 4% e ambiente 2%. Ordene as ações da mais prioritária para a menos prioritária.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>A maior contribuição domina \(u_c\). A intervenção mais eficiente é reduzir primeiro a fonte dominante.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <layouttype>0</layouttype><selecttype>0</selecttype><selectcount>0</selectcount><gradingtype>relative_all_previous_and_next</gradingtype><showgrading>0</showgrading><numberingstyle>none</numberingstyle><shuffleanswers>true</shuffleanswers>
+    <answer fraction="0" format="html"><text><![CDATA[Substituir ou ajustar o sistema de leitura para reduzir o efeito da resolução]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Melhorar a calibração ou usar padrão com menor incerteza]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Aumentar moderadamente o número de repetições]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Controlar ambiente, se o custo for baixo, pois sua contribuição é pequena]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+  </question>
+  <question type="multichoice">
+    <name><text>Q17 - Erro versus incerteza em decisão de conformidade</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Uma peça tem especificação de 50,00 ± 0,20 mm. O laboratório reporta 50,17 ± 0,08 mm com k=2. A gerência quer aprovar automaticamente porque o valor central está dentro da tolerância.</p><p>Qual análise é tecnicamente mais adequada?</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Para decisão de conformidade, não basta olhar o valor central. O intervalo expandido vai de 50,09 a 50,25 mm, ultrapassando o limite superior de 50,20 mm.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>abc</answernumbering><showstandardinstruction>0</showstandardinstruction>
+    <correctfeedback format="html"><text><![CDATA[Correto.]]></text></correctfeedback><partiallycorrectfeedback format="html"><text><![CDATA[Parcialmente correto.]]></text></partiallycorrectfeedback><incorrectfeedback format="html"><text><![CDATA[Revise o raciocínio metrológico.]]></text></incorrectfeedback>
+    <answer fraction="100" format="html"><text><![CDATA[A aprovação automática é frágil, pois o intervalo expandido ultrapassa o limite superior de especificação.]]> </text><feedback format="html"><text><![CDATA[Correto.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[A peça está certamente conforme, pois 50,17 mm é menor que 50,20 mm.]]> </text><feedback format="html"><text><![CDATA[Ignora a incerteza.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[A peça está certamente não conforme, pois a incerteza sempre deve ser somada ao erro.]]> </text><feedback format="html"><text><![CDATA[A conclusão depende da regra de decisão adotada.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[A incerteza deve ser descartada porque k=2 é apenas convenção.]]> </text><feedback format="html"><text><![CDATA[k=2 expressa intervalo expandido de confiança aproximada.]]> </text></feedback></answer>
+  </question>
+  <question type="calculated">
+    <name><text>Q18 - Incerteza combinada RSS</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Em uma cadeia de medição de temperatura, as contribuições padrão independentes são: repetitividade {u1} °C, resolução {u2} °C e calibração {u3} °C. Considere todos os coeficientes de sensibilidade iguais a 1.</p><p>Calcule a incerteza combinada, em °C.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Para fontes independentes: \(u_c=\sqrt{u_1^2+u_2^2+u_3^2}\). A soma direta superestimaria o resultado e não representa combinação estatística independente.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <synchronize>0</synchronize><single>0</single><answernumbering>abc</answernumbering>
+    <answer fraction="100" format="moodle_auto_format"><text>sqrt(({u1})^2+({u2})^2+({u3})^2)</text><tolerance>0.002</tolerance><tolerancetype>1</tolerancetype><correctanswerformat>1</correctanswerformat><correctanswerlength>3</correctanswerlength><feedback format="html"><text><![CDATA[Aplicação numérica correta.]]></text></feedback></answer>
+    <dataset_definitions>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>u1</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>0.04</text></minimum><maximum><text>0.15</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>0.04</value></dataset_item>
+          <dataset_item><number>2</number><value>0.066</value></dataset_item>
+          <dataset_item><number>3</number><value>0.08</value></dataset_item>
+          <dataset_item><number>4</number><value>0.12</value></dataset_item>
+          <dataset_item><number>5</number><value>0.15</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>u2</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>0.05</text></minimum><maximum><text>0.289</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>0.1</value></dataset_item>
+          <dataset_item><number>2</number><value>0.289</value></dataset_item>
+          <dataset_item><number>3</number><value>0.2</value></dataset_item>
+          <dataset_item><number>4</number><value>0.05</value></dataset_item>
+          <dataset_item><number>5</number><value>0.18</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>u3</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>0.06</text></minimum><maximum><text>0.15</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>0.06</value></dataset_item>
+          <dataset_item><number>2</number><value>0.15</value></dataset_item>
+          <dataset_item><number>3</number><value>0.12</value></dataset_item>
+          <dataset_item><number>4</number><value>0.1</value></dataset_item>
+          <dataset_item><number>5</number><value>0.09</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+    </dataset_definitions>
+  </question>
+  <question type="matching">
+    <name><text>Q19 - Conceitos de precisão, exatidão e rastreabilidade</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Associe cada demanda técnica ao conceito mais diretamente envolvido.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Precisão trata de concordância entre medições; exatidão de proximidade com referência; rastreabilidade de cadeia metrológica documentada.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <correctfeedback format="html"><text><![CDATA[Correto.]]></text></correctfeedback><partiallycorrectfeedback format="html"><text><![CDATA[Há pares corretos e incorretos.]]></text></partiallycorrectfeedback><incorrectfeedback format="html"><text><![CDATA[Revise as definições.]]></text></incorrectfeedback>
+    <subquestion format="html"><text><![CDATA[Reduzir dispersão entre leituras sucessivas.]]> </text><answer><text>Precisão</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[Aproximar a média do valor verdadeiro convencional.]]> </text><answer><text>Exatidão</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[Documentar cadeia de calibração até padrões reconhecidos.]]> </text><answer><text>Rastreabilidade</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[Separar resultado em valor estimado e intervalo de dúvida.]]> </text><answer><text>Incerteza de medição</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[Comparar medições em operadores e locais diferentes.]]> </text><answer><text>Reprodutibilidade</text></answer></subquestion>
+  </question>
+  <question type="numerical">
+    <name><text>Q20 - Incerteza expandida com arredondamento</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Uma avaliação GUM resultou em incerteza combinada uc = 0,336 °C e fator k = 2,01. Calcule a incerteza expandida U, em °C, antes do arredondamento final.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>\(U=k\cdot u_c=2,01	imes0,336=0,67536\;°C\). Em relatório, poderia ser arredondado para cerca de 0,68 °C ou 0,7 °C conforme a política adotada.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <unitgradingtype>0</unitgradingtype><unitpenalty>0.1000000</unitpenalty><showunits>3</showunits><unitsleft>0</unitsleft>
+    <answer fraction="100" format="moodle_auto_format"><text>0.67536</text><tolerance>0.0005</tolerance><feedback format="html"><text><![CDATA[Valor dentro da tolerância.]]></text></feedback></answer>
+  </question>
+  <question type="gapselect">
+    <name><text>Q21 - Coeficientes de sensibilidade</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Complete: no modelo \(y=f(x_1,x_2,...,x_n)\), o coeficiente de sensibilidade é dado por [[1]] e indica quanto o resultado muda quando uma entrada varia. Em modelo aditivo simples, esse coeficiente tende a [[2]], mas em modelos não lineares deve ser obtido por [[3]].</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>O coeficiente de sensibilidade pondera cada incerteza padrão antes da combinação quadrática.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <selectoption><text>∂f/∂xi</text><group>1</group></selectoption>
+    <selectoption><text>1</text><group>1</group></selectoption>
+    <selectoption><text>derivada parcial</text><group>1</group></selectoption>
+    <selectoption><text>U/k</text><group>1</group></selectoption>
+    <selectoption><text>s/√n</text><group>1</group></selectoption>
+    <selectoption><text>erro máximo permitido</text><group>1</group></selectoption>
+  </question>
+  <question type="calculatedmulti">
+    <name><text>Q22 - Conversão de certificado para incerteza padrão</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Um certificado de calibração informa incerteza expandida de <b>{U} unidades</b> com fator de abrangência <b>{k}</b>. A equipe deseja inserir essa contribuição no balanço como incerteza padrão.</p><p>Qual valor deve ser usado?</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Quando o certificado fornece \(U\) e \(k\), a incerteza padrão é \(u=U/k\).</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <synchronize>0</synchronize><single>true</single><shuffleanswers>true</shuffleanswers><answernumbering>abc</answernumbering>
+    <answer fraction="100" format="html"><text><![CDATA[{U}/{k}]]> </text><feedback format="html"><text><![CDATA[Correto.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[{U}*{k}]]> </text><feedback format="html"><text><![CDATA[Isso duplicaria a expansão.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[sqrt({U}^2+{k}^2)]]> </text><feedback format="html"><text><![CDATA[k não é incerteza padrão.]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[{k}/{U}]]> </text><feedback format="html"><text><![CDATA[Inverte o significado físico.]]> </text></feedback></answer>
+    <dataset_definitions>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>U</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>0.08</text></minimum><maximum><text>2.5</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>0.3</value></dataset_item>
+          <dataset_item><number>2</number><value>0.5</value></dataset_item>
+          <dataset_item><number>3</number><value>1.2</value></dataset_item>
+          <dataset_item><number>4</number><value>0.08</value></dataset_item>
+          <dataset_item><number>5</number><value>2.5</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+      <dataset_definition><status><text>private</text></status>
+        <name><text>k</text></name><type>calculatedsimple</type><distribution><text>uniform</text></distribution>
+        <minimum><text>1.96</text></minimum><maximum><text>2.58</text></maximum><decimals><text>3</text></decimals><itemcount>5</itemcount><dataset_items>
+          <dataset_item><number>1</number><value>2.0</value></dataset_item>
+          <dataset_item><number>2</number><value>1.96</value></dataset_item>
+          <dataset_item><number>3</number><value>2.4</value></dataset_item>
+          <dataset_item><number>4</number><value>2.0</value></dataset_item>
+          <dataset_item><number>5</number><value>2.58</value></dataset_item>
+        </dataset_items><number_of_items>5</number_of_items></dataset_definition>
+    </dataset_definitions>
+  </question>
+  <question type="ddwtos">
+    <name><text>Q23 - Arraste as ações ao tipo de problema metrológico</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Associe a ação mais adequada ao problema identificado: erro aleatório elevado → [[1]]; bias identificado → [[2]]; ponto aberrante por falha operacional → [[3]]; deriva temporal crescente → [[4]].</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Cada problema pede resposta técnica diferente. Confundir média, calibração e exclusão de outlier pode produzir resultado aparentemente preciso, mas metrologicamente inválido.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <shuffleanswers>true</shuffleanswers>
+    <dragbox><text>aumentar repetições e estimar Tipo A</text><group>1</group><no>1</no><infinite>false</infinite></dragbox>
+    <dragbox><text>aplicar correção/calibração</text><group>1</group><no>2</no><infinite>false</infinite></dragbox>
+    <dragbox><text>investigar e eliminar dado inválido</text><group>1</group><no>3</no><infinite>false</infinite></dragbox>
+    <dragbox><text>recalibrar periodicamente e monitorar tendência</text><group>1</group><no>4</no><infinite>false</infinite></dragbox>
+    <dragbox><text>arredondar o resultado</text><group>1</group><no>5</no><infinite>false</infinite></dragbox>
+    <dragbox><text>trocar unidade SI</text><group>1</group><no>6</no><infinite>false</infinite></dragbox>
+  </question>
+  <question type="ordering">
+    <name><text>Q24 - Construção de relatório de resultado final</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Ordene os elementos para redigir corretamente um resultado final de calibração conforme boas práticas metrológicas.</p>]]> </text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Um relatório robusto deve apresentar valor, incerteza, unidade, k/nível de confiança e observações sobre correções aplicadas.</p>]]> </text></generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade><penalty>0.3333333</penalty><hidden>0</hidden>
+    <layouttype>0</layouttype><selecttype>0</selecttype><selectcount>0</selectcount><gradingtype>relative_all_previous_and_next</gradingtype><showgrading>0</showgrading><numberingstyle>none</numberingstyle><shuffleanswers>true</shuffleanswers>
+    <answer fraction="0" format="html"><text><![CDATA[Apresentar o valor estimado corrigido do mensurando]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Informar a incerteza expandida associada ao valor]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Indicar a unidade de medida de forma consistente]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Declarar o fator de abrangência k utilizado]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Informar o nível de confiança aproximado]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[Registrar correções sistemáticas aplicadas e principais fontes de incerteza]]> </text><feedback format="html"><text><![CDATA[]]> </text></feedback></answer>
+  </question>
+</quiz>
