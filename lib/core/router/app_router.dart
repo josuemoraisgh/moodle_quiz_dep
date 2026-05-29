@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/config/quiz_runtime_config.dart';
 import '../../domain/entities/question_entity.dart';
 import '../../presentation/controllers/auth_controller.dart';
+import '../../presentation/pages/guest/guest_question_page.dart';
 import '../../presentation/pages/login_page.dart';
 import '../../presentation/pages/professor/professor_home_page.dart';
 import '../../presentation/pages/professor/professor_quiz_selection_page.dart';
@@ -21,13 +23,28 @@ class AppRouter {
   static const String professorRank = '/professor/rank';
   static const String professorReveal = '/professor/reveal';
   static const String studentLobby = '/student/lobby';
+  static const String guestQuestion = '/guest/question';
 
   static GoRouter build(BuildContext context) {
+    final runtime = context.read<QuizRuntimeConfig>();
     return GoRouter(
-      initialLocation: login,
+      initialLocation:
+          runtime.singleQuestionByDependency ? guestQuestion : login,
       redirect: (context, state) {
         final auth = context.read<AuthController>();
+        final runtime = context.read<QuizRuntimeConfig>();
         final loc = state.matchedLocation;
+
+        if (loc == guestQuestion) {
+          if (!runtime.singleQuestionByDependency) {
+            return auth.isLoggedIn
+                ? (auth.user!.isTeacher ? professorQuiz : studentLobby)
+                : login;
+          }
+          if (!auth.isLoggedIn) return null;
+          // Modo dependência: professor vai para tela de gestão, aluno permanece.
+          return auth.user!.isTeacher ? professorQuiz : null;
+        }
 
         // Setup só abre quando há parâmetros pendentes de configuração.
         if (loc == professorSetup) {
@@ -55,6 +72,10 @@ class AppRouter {
         return null;
       },
       routes: [
+        GoRoute(
+          path: guestQuestion,
+          builder: (_, __) => const GuestQuestionPage(),
+        ),
         GoRoute(path: login, builder: (_, __) => const LoginPage()),
         GoRoute(
             path: professorSetup,

@@ -60,6 +60,9 @@ Future<Widget> buildQuizAppWithDependencies({
   required AppSettingsEntity settings,
   required String defaultPassword,
   QuestionEntity? question,
+  Map<String, dynamic>? questionMap,
+  String? questionXml,
+  int questionXmlIndex = 0,
   int? questionId,
   QuestionNavigationMode navigationMode = QuestionNavigationMode.list,
   List<LocalQuizEntity> quizzes = const [],
@@ -95,7 +98,9 @@ Future<Widget> buildQuizAppWithDependencies({
     courseId: courseId,
     localServerPort: localServerPort,
     startLocalServer: startLocalServer,
-    singleQuestionByDependency: question != null,
+    singleQuestionByDependency: question != null ||
+        (questionMap?.isNotEmpty ?? false) ||
+        (questionXml?.trim().isNotEmpty ?? false),
   );
 
   final core = buildQuizCoreWithDependencies(
@@ -107,6 +112,9 @@ Future<Widget> buildQuizAppWithDependencies({
 
   return core.createQuizScreen(
     question: question,
+    questionMap: questionMap,
+    questionXml: questionXml,
+    questionXmlIndex: questionXmlIndex,
     questionId: questionId,
     navigationMode: navigationMode,
     quizzes: quizzes,

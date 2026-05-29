@@ -48,8 +48,11 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
     if (auth.error != null) return;
 
+    final runtime = context.read<QuizRuntimeConfig>();
     if (auth.user!.isTeacher) {
       context.go(AppRouter.professorQuiz);
+    } else if (runtime.singleQuestionByDependency) {
+      context.go(AppRouter.guestQuestion);
     } else {
       context.go(AppRouter.studentLobby);
     }
