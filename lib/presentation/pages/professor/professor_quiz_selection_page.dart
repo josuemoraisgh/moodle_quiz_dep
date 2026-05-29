@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../core/services/file_import_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../domain/entities/local_quiz_entity.dart';
@@ -23,6 +24,8 @@ class ProfessorQuizSelectionPage extends StatefulWidget {
 
 class _ProfessorQuizSelectionPageState
     extends State<ProfessorQuizSelectionPage> {
+  final FileImportService _fileImportService = createFileImportService();
+
   @override
   void initState() {
     super.initState();
@@ -35,10 +38,25 @@ class _ProfessorQuizSelectionPageState
   }
 
   Future<void> _importXml(ProfessorController prof) async {
+    final picked = await _fileImportService.pickTextFile(
+      allowedExtensions: const ['xml'],
+      dialogTitle: 'Importar XML Moodle',
+    );
+    if (!mounted) return;
+    if (picked != null) {
+      await _importXmlPayload(
+        prof: prof,
+        fileName: picked.fileName,
+        xmlText: picked.content,
+      );
+      return;
+    }
+
     final nameCtrl = TextEditingController(text: 'quiz_importado.xml');
+    final pathCtrl = TextEditingController();
     final xmlCtrl = TextEditingController();
 
-    final payload = await showDialog<(String, String)>(
+    final payload = await showDialog<(String, String, String)>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.bgCard,
@@ -55,6 +73,15 @@ class _ProfessorQuizSelectionPageState
                 controller: nameCtrl,
                 style: const TextStyle(color: AppTheme.textPrimary),
                 decoration: const InputDecoration(labelText: 'Nome do arquivo'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: pathCtrl,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                decoration: const InputDecoration(
+                  labelText: 'Caminho do arquivo (opcional no desktop)',
+                  hintText: 'Ex.: C:/quizzes/prova.xml',
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -78,7 +105,7 @@ class _ProfessorQuizSelectionPageState
           ElevatedButton(
             onPressed: () => Navigator.pop(
               context,
-              (nameCtrl.text.trim(), xmlCtrl.text),
+              (nameCtrl.text.trim(), pathCtrl.text.trim(), xmlCtrl.text),
             ),
             child: const Text('Importar'),
           ),
@@ -88,11 +115,29 @@ class _ProfessorQuizSelectionPageState
     if (payload == null) return;
 
     final fileName = payload.$1.isEmpty ? 'quiz_importado.xml' : payload.$1;
-    final xmlText = payload.$2.trim();
-    if (xmlText.isEmpty) return;
+    final path = payload.$2;
+    var xmlText = payload.$3.trim();
+
+    if (xmlText.isEmpty && path.isNotEmpty) {
+      final read = await _fileImportService.readTextFileFromPath(path);
+      if (read != null) {
+        xmlText = read.content;
+      }
+    }
+
+    await _importXmlPayload(prof: prof, fileName: fileName, xmlText: xmlText);
+  }
+
+  Future<void> _importXmlPayload({
+    required ProfessorController prof,
+    required String fileName,
+    required String xmlText,
+  }) async {
+    final normalized = xmlText.trim();
+    if (normalized.isEmpty) return;
 
     await prof.importFromXml(
-      bytes: Uint8List.fromList(utf8.encode(xmlText)),
+      bytes: Uint8List.fromList(utf8.encode(normalized)),
       fileName: fileName,
     );
     if (!mounted) return;

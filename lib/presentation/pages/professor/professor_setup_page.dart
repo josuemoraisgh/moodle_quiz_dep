@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../core/services/file_import_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../domain/entities/app_settings_entity.dart';
@@ -19,6 +20,7 @@ class ProfessorSetupPage extends StatefulWidget {
 }
 
 class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
+  final FileImportService _fileImportService = createFileImportService();
   final _teacherPassCtrl = TextEditingController();
   final _studentPassCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
@@ -82,7 +84,21 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
     }
   }
 
-  Future<void> _importStudentsFromTextDialog() async {
+  Future<void> _importStudents() async {
+    final imported = await _fileImportService.pickTextFile(
+      allowedExtensions: const ['txt', 'csv'],
+      dialogTitle: 'Importar alunos',
+    );
+    if (!mounted) return;
+    if (imported != null) {
+      _appendStudentsFromRaw(imported.content);
+      return;
+    }
+
+    if (_fileImportService.supportsNativePicker) {
+      return;
+    }
+
     final controller = TextEditingController();
     final raw = await showDialog<String>(
       context: context,
@@ -116,6 +132,10 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
     );
     if (raw == null || raw.trim().isEmpty) return;
 
+    _appendStudentsFromRaw(raw);
+  }
+
+  void _appendStudentsFromRaw(String raw) {
     final lines = raw
         .split(RegExp(r'[\n,;]+'))
         .map((s) => s.trim())
@@ -264,9 +284,9 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
                             title: 'Lista de Alunos (${_students.length})',
                             icon: Icons.people_outline,
                             trailing: TextButton.icon(
-                              onPressed: _importStudentsFromTextDialog,
+                              onPressed: _importStudents,
                               icon: const Icon(Icons.upload_file, size: 16),
-                              label: const Text('Importar texto'),
+                              label: const Text('Importar arquivo/texto'),
                               style: TextButton.styleFrom(
                                   foregroundColor: AppTheme.accent),
                             ),

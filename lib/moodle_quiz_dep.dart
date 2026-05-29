@@ -1,5 +1,6 @@
 export 'core/config/quiz_runtime_config.dart';
 export 'core/bootstrap/app_dependency_factory.dart';
+export 'core/services/file_import_service.dart';
 export 'app/moodle_quiz_app.dart';
 export 'domain/entities/app_settings_entity.dart';
 export 'domain/entities/local_quiz_entity.dart';
