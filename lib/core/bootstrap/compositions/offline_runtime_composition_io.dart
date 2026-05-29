@@ -5,12 +5,10 @@ import '../../../data/repositories/local_quiz_repository_impl.dart';
 import '../../../domain/services/quiz_sync_server.dart';
 import '../../config/quiz_runtime_config.dart';
 import '../../database/app_database.dart';
-import '../../services/quiz_state_service.dart';
 import 'runtime_composition.dart';
 
 Future<RuntimeComposition> buildOfflineRuntimeComposition(
   QuizRuntimeConfig config,
-  QuizStateService stateService,
 ) async {
   final db = AppDatabase.instance;
   final datasource = LocalDatasource(db);
@@ -26,9 +24,10 @@ Future<RuntimeComposition> buildOfflineRuntimeComposition(
   }
 
   return RuntimeComposition(
-    authRepository: LocalAuthRepositoryImpl(datasource),
-    quizRepository: LocalQuizRepository(datasource, stateService),
-    syncServer: syncServer,
+    authRepositoryFactory: () => LocalAuthRepositoryImpl(datasource),
+    quizRepositoryFactory: (stateService) =>
+        LocalQuizRepository(datasource, stateService),
+    syncServerFactory: () => syncServer,
   );
 }
 

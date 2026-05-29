@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 
-import '../../app/moodle_quiz_app.dart';
 import '../../domain/entities/app_settings_entity.dart';
 import '../../domain/entities/local_quiz_entity.dart';
 import '../../domain/entities/question_entity.dart';
@@ -10,6 +9,44 @@ import '../../domain/repositories/i_quiz_runtime_repository.dart';
 import '../../domain/services/quiz_sync_server.dart';
 import '../config/quiz_runtime_config.dart';
 import '../services/quiz_state_service.dart';
+import 'quiz_core.dart';
+
+/// Cria um Core global a partir de factories.
+///
+/// Use uma unica instancia desta classe por aplicacao/projeto e crie
+/// multiplas telas de quiz com [QuizCore.createQuizScreen].
+QuizCore buildQuizCoreWithFactories({
+  required QuizRuntimeConfig baseConfig,
+  required IQuizAuthRepository Function() authRepositoryFactory,
+  required IQuizRuntimeRepository Function(QuizStateService stateService)
+      quizRepositoryFactory,
+  required QuizSyncServer Function() syncServerFactory,
+}) {
+  return QuizCore(
+    baseConfig: baseConfig,
+    authRepositoryFactory: authRepositoryFactory,
+    quizRepositoryFactory: quizRepositoryFactory,
+    syncServerFactory: syncServerFactory,
+  );
+}
+
+/// Cria um Core global a partir de instancias prontas.
+///
+/// Para multiplas telas independentes prefira [buildQuizCoreWithFactories],
+/// pois reutilizar um mesmo repositorio de runtime pode acoplar estado.
+QuizCore buildQuizCoreWithDependencies({
+  required QuizRuntimeConfig baseConfig,
+  required IQuizAuthRepository authRepository,
+  required IQuizRuntimeRepository quizRepository,
+  QuizSyncServer syncServer = const HostedQuizSyncServer(serverUrl: ''),
+}) {
+  return QuizCore(
+    baseConfig: baseConfig,
+    authRepositoryFactory: () => authRepository,
+    quizRepositoryFactory: (_) => quizRepository,
+    syncServerFactory: () => syncServer,
+  );
+}
 
 /// API pública de DI para embed do pacote em apps Flutter.
 ///
@@ -36,22 +73,20 @@ Future<Widget> buildQuizAppWithDependencies({
   QuizStateService? stateService,
   QuizSyncServer? syncServer,
 }) async {
-  final runtimeStateService = stateService ?? QuizStateService();
-  final runtimeSyncServer =
-      syncServer ?? const HostedQuizSyncServer(serverUrl: '');
+  final effectiveSettings = settings.copyWith(
+    teacherPassword: settings.teacherPassword.isEmpty
+        ? defaultPassword
+        : settings.teacherPassword,
+    studentPassword: settings.studentPassword.isEmpty
+        ? defaultPassword
+        : settings.studentPassword,
+  );
 
-  return MoodleQuizApp.createWithDependencies(
-    mode: mode,
-    users: users,
-    settings: settings,
-    defaultPassword: defaultPassword,
-    authRepository: authRepository,
-    quizRepository: quizRepository,
-    stateService: runtimeStateService,
-    syncServer: runtimeSyncServer,
-    question: question,
-    questionId: questionId,
+  final baseConfig = QuizRuntimeConfig(
+    operationMode: mode,
     navigationMode: navigationMode,
+    settings: effectiveSettings,
+    students: users,
     quizzes: quizzes,
     questions: questions,
     initialQuizName: initialQuizName,
@@ -60,5 +95,23 @@ Future<Widget> buildQuizAppWithDependencies({
     courseId: courseId,
     localServerPort: localServerPort,
     startLocalServer: startLocalServer,
+    singleQuestionByDependency: question != null,
+  );
+
+  final core = buildQuizCoreWithDependencies(
+    baseConfig: baseConfig,
+    authRepository: authRepository,
+    quizRepository: quizRepository,
+    syncServer: syncServer ?? const HostedQuizSyncServer(serverUrl: ''),
+  );
+
+  return core.createQuizScreen(
+    question: question,
+    questionId: questionId,
+    navigationMode: navigationMode,
+    quizzes: quizzes,
+    questions: questions,
+    initialQuizName: initialQuizName,
+    stateService: stateService,
   );
 }

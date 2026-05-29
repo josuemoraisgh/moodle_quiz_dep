@@ -13,22 +13,20 @@ Future<RuntimeComposition> buildOnlineRuntimeComposition(
 ) async {
   final moodleDatasource = MoodleDatasource();
   final moodleStateDatasource = MoodleStateDatasource(moodleDatasource);
-  final moodleAuthRepository = moodle_auth.AuthRepositoryImpl(moodleDatasource);
-  final moodleQuizRepository = moodle_quiz.QuizRepositoryImpl(
-    moodleStateDatasource,
-    moodleDatasource,
-  );
 
   return RuntimeComposition(
-    authRepository: MoodleRuntimeAuthRepository(
-      moodleAuth: moodleAuthRepository,
+    authRepositoryFactory: () => MoodleRuntimeAuthRepository(
+      moodleAuth: moodle_auth.AuthRepositoryImpl(moodleDatasource),
       config: config,
     ),
-    quizRepository: MoodleRuntimeQuizRepository(
-      moodleQuiz: moodleQuizRepository,
+    quizRepositoryFactory: (_) => MoodleRuntimeQuizRepository(
+      moodleQuiz: moodle_quiz.QuizRepositoryImpl(
+        moodleStateDatasource,
+        moodleDatasource,
+      ),
       config: config,
     ),
-    syncServer: HostedQuizSyncServer(
+    syncServerFactory: () => HostedQuizSyncServer(
       serverUrl:
           config.studentUrl.isEmpty ? config.moodleBaseUrl : config.studentUrl,
     ),
