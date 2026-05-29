@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/config/quiz_runtime_config.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/file_import_service.dart';
 import '../../../core/theme/app_theme.dart';
@@ -32,7 +33,13 @@ class _ProfessorQuizSelectionPageState
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final user = context.read<AuthController>().user;
       if (user != null) {
-        await context.read<ProfessorController>().init(user);
+        final runtime = context.read<QuizRuntimeConfig>();
+        final prof = context.read<ProfessorController>();
+        await prof.init(user);
+        if (!mounted) return;
+        if (runtime.singleQuestionByDependency && prof.quizzes.isNotEmpty) {
+          await _selectQuiz(prof, prof.quizzes.first);
+        }
       }
     });
   }
@@ -178,8 +185,10 @@ class _ProfessorQuizSelectionPageState
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ProfessorController, AuthController>(
-      builder: (context, prof, auth, _) {
+    return Consumer3<ProfessorController, AuthController, QuizRuntimeConfig>(
+      builder: (context, prof, auth, runtime, _) {
+        final allowXmlImport =
+            prof.supportsImport && !runtime.singleQuestionByDependency;
         return Scaffold(
           body: Container(
             decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
@@ -238,7 +247,7 @@ class _ProfessorQuizSelectionPageState
                       ),
 
                       // ── Importar XML ────────────────────────────────────
-                      if (prof.supportsImport)
+                      if (allowXmlImport)
                         Padding(
                           padding: Responsive.horizontalPadding(context),
                           child: ElevatedButton.icon(

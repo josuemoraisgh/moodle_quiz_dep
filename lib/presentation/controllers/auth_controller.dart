@@ -23,7 +23,16 @@ class AuthController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isLoggedIn => _user != null;
-  bool get requiresSetup => _repo.supportsLocalSetup && _settings.isFirstRun;
+  bool get needsTeacherPassword => _settings.teacherPassword.trim().isEmpty;
+  bool get needsStudentPassword => _settings.studentPassword.trim().isEmpty;
+  bool get needsQuizTitle => _settings.quizTitle.trim().isEmpty;
+  bool get needsStudents => _students.isEmpty;
+  bool get requiresSetup =>
+      _repo.supportsLocalSetup &&
+      (needsTeacherPassword ||
+          needsStudentPassword ||
+          needsQuizTitle ||
+          needsStudents);
   bool get isOnlineMode => !_repo.supportsLocalSetup;
 
   /// Inicialização: carrega configurações, lista de alunos e sessão salva.

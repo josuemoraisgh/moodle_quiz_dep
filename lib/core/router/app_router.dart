@@ -29,8 +29,12 @@ class AppRouter {
         final auth = context.read<AuthController>();
         final loc = state.matchedLocation;
 
-        // Setup sempre acessível (professor sem senha ainda).
-        if (loc == professorSetup) return null;
+        // Setup só abre quando há parâmetros pendentes de configuração.
+        if (loc == professorSetup) {
+          if (auth.requiresSetup) return null;
+          if (!auth.isLoggedIn) return login;
+          return auth.user!.isTeacher ? professorQuiz : studentLobby;
+        }
 
         // Não autenticado → login
         if (!auth.isLoggedIn && loc != login) return login;

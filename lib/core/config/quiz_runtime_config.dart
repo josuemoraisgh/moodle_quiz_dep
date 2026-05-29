@@ -20,6 +20,7 @@ class QuizRuntimeConfig {
   final int courseId;
   final int localServerPort;
   final bool startLocalServer;
+  final bool singleQuestionByDependency;
 
   const QuizRuntimeConfig({
     this.operationMode = QuizOperationMode.offline,
@@ -37,6 +38,7 @@ class QuizRuntimeConfig {
     this.courseId = 0,
     this.localServerPort = 8080,
     this.startLocalServer = true,
+    this.singleQuestionByDependency = false,
   });
 
   factory QuizRuntimeConfig.offline({
@@ -128,6 +130,7 @@ class QuizRuntimeConfig {
       localServerPort:
           int.tryParse(map['server_port']?.toString() ?? '') ?? 8080,
       startLocalServer: map['start_local_server'] != false,
+      singleQuestionByDependency: map['single_question_by_dependency'] == true,
     );
   }
 
@@ -144,6 +147,7 @@ class QuizRuntimeConfig {
     int? courseId,
     int? localServerPort,
     bool? startLocalServer,
+    bool? singleQuestionByDependency,
   }) {
     return QuizRuntimeConfig(
       operationMode: operationMode ?? this.operationMode,
@@ -158,6 +162,8 @@ class QuizRuntimeConfig {
       courseId: courseId ?? this.courseId,
       localServerPort: localServerPort ?? this.localServerPort,
       startLocalServer: startLocalServer ?? this.startLocalServer,
+      singleQuestionByDependency:
+          singleQuestionByDependency ?? this.singleQuestionByDependency,
     );
   }
 

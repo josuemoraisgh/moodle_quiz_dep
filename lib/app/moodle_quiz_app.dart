@@ -62,6 +62,8 @@ class MoodleQuizApp extends StatelessWidget {
     required IQuizRuntimeRepository quizRepository,
     required QuizStateService stateService,
     required QuizSyncServer syncServer,
+    QuestionEntity? question,
+    int? questionId,
     QuestionNavigationMode navigationMode = QuestionNavigationMode.list,
     List<LocalQuizEntity> quizzes = const [],
     List<QuestionEntity> questions = const [],
@@ -72,6 +74,18 @@ class MoodleQuizApp extends StatelessWidget {
     int localServerPort = 8080,
     bool startLocalServer = true,
   }) {
+    final runtimeQuestion = question == null
+        ? null
+        : _withRuntimeQuestionId(
+            question,
+            forcedId: questionId,
+          );
+    final runtimeQuestions =
+        runtimeQuestion == null ? questions : <QuestionEntity>[runtimeQuestion];
+    final runtimeNavigation = runtimeQuestion == null
+        ? navigationMode
+        : QuestionNavigationMode.single;
+
     final effectiveSettings = settings.copyWith(
       teacherPassword: settings.teacherPassword.isEmpty
           ? defaultPassword
@@ -83,17 +97,18 @@ class MoodleQuizApp extends StatelessWidget {
 
     final config = QuizRuntimeConfig(
       operationMode: mode,
-      navigationMode: navigationMode,
+      navigationMode: runtimeNavigation,
       settings: effectiveSettings,
       students: users,
       quizzes: quizzes,
-      questions: questions,
+      questions: runtimeQuestions,
       initialQuizName: initialQuizName,
       moodleBaseUrl: moodleBaseUrl,
       studentUrl: studentUrl,
       courseId: courseId,
       localServerPort: localServerPort,
       startLocalServer: startLocalServer,
+      singleQuestionByDependency: runtimeQuestion != null,
     );
 
     return create(
@@ -102,6 +117,35 @@ class MoodleQuizApp extends StatelessWidget {
       quizRepository: quizRepository,
       stateService: stateService,
       syncServer: syncServer,
+    );
+  }
+
+  static QuestionEntity _withRuntimeQuestionId(
+    QuestionEntity question, {
+    int? forcedId,
+  }) {
+    final runtimeId =
+        forcedId ?? DateTime.now().microsecondsSinceEpoch.remainder(2147483647);
+    final safeId = runtimeId <= 0 ? 1 : runtimeId;
+
+    return QuestionEntity(
+      slot: safeId,
+      page: 0,
+      text: question.text,
+      htmlText: question.htmlText,
+      displayHtml: question.displayHtml,
+      choices: question.choices,
+      imageUrls: question.imageUrls,
+      inputBaseName: question.inputBaseName,
+      seqCheck: question.seqCheck,
+      type: question.type,
+      generalFeedback: question.generalFeedback,
+      rightAnswerHtml: question.rightAnswerHtml,
+      answerControls: question.answerControls,
+      answerInputName: question.answerInputName,
+      matchData: question.matchData,
+      gapInputData: question.gapInputData,
+      ddMarkerData: question.ddMarkerData,
     );
   }
 

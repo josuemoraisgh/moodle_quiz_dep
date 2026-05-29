@@ -222,7 +222,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      if (!auth.isOnlineMode) ...[
+                      if (!auth.isOnlineMode && auth.requiresSetup) ...[
                         const SizedBox(height: 20),
                         TextButton.icon(
                           onPressed: () => context.go(AppRouter.professorSetup),

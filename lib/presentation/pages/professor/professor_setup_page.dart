@@ -52,12 +52,17 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
   }
 
   Future<void> _save() async {
-    if (_teacherPassCtrl.text.trim().isEmpty) {
+    final auth = context.read<AuthController>();
+    if (auth.needsTeacherPassword && _teacherPassCtrl.text.trim().isEmpty) {
       setState(() => _error = 'Informe a senha do professor.');
       return;
     }
-    if (_studentPassCtrl.text.trim().isEmpty) {
+    if (auth.needsStudentPassword && _studentPassCtrl.text.trim().isEmpty) {
       setState(() => _error = 'Informe a senha dos alunos.');
+      return;
+    }
+    if (auth.needsStudents && _students.isEmpty) {
+      setState(() => _error = 'Informe ao menos um aluno.');
       return;
     }
     setState(() {
@@ -65,17 +70,24 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
       _error = null;
     });
     try {
-      final auth = context.read<AuthController>();
+      final current = auth.settings;
+      final resolvedTitle = _titleCtrl.text.trim().isEmpty
+          ? current.quizTitle
+          : _titleCtrl.text.trim();
       await auth.saveSettings(AppSettingsEntity(
-        teacherPassword: _teacherPassCtrl.text.trim(),
-        studentPassword: _studentPassCtrl.text.trim(),
-        quizTitle: _titleCtrl.text.trim().isEmpty
-            ? 'Quiz Presencial'
-            : _titleCtrl.text.trim(),
-        defaultDurationSeconds: auth.settings.defaultDurationSeconds,
-        durationOptions: auth.settings.durationOptions,
+        teacherPassword: _teacherPassCtrl.text.trim().isEmpty
+            ? current.teacherPassword
+            : _teacherPassCtrl.text.trim(),
+        studentPassword: _studentPassCtrl.text.trim().isEmpty
+            ? current.studentPassword
+            : _studentPassCtrl.text.trim(),
+        quizTitle: resolvedTitle.isEmpty ? 'Quiz Presencial' : resolvedTitle,
+        defaultDurationSeconds: current.defaultDurationSeconds,
+        durationOptions: current.durationOptions,
       ));
-      await auth.saveStudents(_students.map((s) => s.name).toList());
+      if (auth.needsStudents) {
+        await auth.saveStudents(_students.map((s) => s.name).toList());
+      }
       if (mounted) context.go(AppRouter.login);
     } catch (e) {
       setState(() => _error = e.toString());
@@ -213,150 +225,189 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
                           ),
                           const SizedBox(height: 24),
 
-                          // ── Título do quiz ──────────────────────────────
-                          _SectionCard(
-                            title: 'Nome do Quiz',
-                            icon: Icons.quiz_rounded,
-                            child: TextFormField(
-                              controller: _titleCtrl,
-                              style:
-                                  const TextStyle(color: AppTheme.textPrimary),
-                              decoration: const InputDecoration(
-                                labelText: 'Título exibido na tela',
-                                hintText: 'Quiz Presencial',
-                                hintStyle:
-                                    TextStyle(color: AppTheme.textSecondary),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
+                          Consumer<AuthController>(
+                            builder: (context, auth, _) {
+                              final needsTitle = auth.needsQuizTitle;
+                              final needsTeacherPass =
+                                  auth.needsTeacherPassword;
+                              final needsStudentPass =
+                                  auth.needsStudentPassword;
+                              final needsStudents = auth.needsStudents;
 
-                          // ── Senhas ──────────────────────────────────────
-                          _SectionCard(
-                            title: 'Senhas de Acesso',
-                            icon: Icons.lock_outline,
-                            child: Column(
-                              children: [
-                                TextFormField(
-                                  controller: _teacherPassCtrl,
-                                  obscureText: _obscureTeacher,
-                                  style: const TextStyle(
-                                      color: AppTheme.textPrimary),
-                                  decoration: InputDecoration(
-                                    labelText: 'Senha do professor',
-                                    prefixIcon: const Icon(
-                                        Icons.admin_panel_settings_outlined),
-                                    suffixIcon: IconButton(
-                                      icon: Icon(_obscureTeacher
-                                          ? Icons.visibility_off
-                                          : Icons.visibility),
-                                      onPressed: () => setState(() =>
-                                          _obscureTeacher = !_obscureTeacher),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: _studentPassCtrl,
-                                  obscureText: _obscureStudent,
-                                  style: const TextStyle(
-                                      color: AppTheme.textPrimary),
-                                  decoration: InputDecoration(
-                                    labelText: 'Senha dos alunos (única)',
-                                    prefixIcon:
-                                        const Icon(Icons.group_outlined),
-                                    suffixIcon: IconButton(
-                                      icon: Icon(_obscureStudent
-                                          ? Icons.visibility_off
-                                          : Icons.visibility),
-                                      onPressed: () => setState(() =>
-                                          _obscureStudent = !_obscureStudent),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // ── Lista de alunos ─────────────────────────────
-                          _SectionCard(
-                            title: 'Lista de Alunos (${_students.length})',
-                            icon: Icons.people_outline,
-                            trailing: TextButton.icon(
-                              onPressed: _importStudents,
-                              icon: const Icon(Icons.upload_file, size: 16),
-                              label: const Text('Importar arquivo/texto'),
-                              style: TextButton.styleFrom(
-                                  foregroundColor: AppTheme.accent),
-                            ),
-                            child: Column(
-                              children: [
-                                // Campo + botão adicionar
-                                Row(
-                                  children: [
-                                    Expanded(
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (needsTitle) ...[
+                                    _SectionCard(
+                                      title: 'Nome do Quiz',
+                                      icon: Icons.quiz_rounded,
                                       child: TextFormField(
-                                        controller: _studentNameCtrl,
+                                        controller: _titleCtrl,
                                         style: const TextStyle(
                                             color: AppTheme.textPrimary),
                                         decoration: const InputDecoration(
-                                          labelText: 'Nome do aluno',
-                                          hintText: 'Ex: Maria Silva',
+                                          labelText: 'Título exibido na tela',
+                                          hintText: 'Quiz Presencial',
                                           hintStyle: TextStyle(
                                               color: AppTheme.textSecondary),
                                         ),
-                                        onFieldSubmitted: (_) => _addStudent(),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    IconButton(
-                                      onPressed: _addStudent,
-                                      icon: const Icon(Icons.add_circle,
-                                          color: AppTheme.success, size: 32),
-                                      tooltip: 'Adicionar aluno',
-                                    ),
+                                    const SizedBox(height: 16),
                                   ],
-                                ),
-                                if (_students.isNotEmpty) ...[
-                                  const SizedBox(height: 12),
-                                  ListView.builder(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: _students.length,
-                                    itemBuilder: (_, i) => ListTile(
-                                      dense: true,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 4),
-                                      leading: CircleAvatar(
-                                        backgroundColor: AppTheme.primary
-                                            .withValues(alpha: 0.15),
-                                        child: Text(
-                                          '${i + 1}',
-                                          style: const TextStyle(
-                                              color: AppTheme.primary,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 13),
-                                        ),
-                                      ),
-                                      title: Text(_students[i].name,
-                                          style: const TextStyle(
-                                              color: AppTheme.textPrimary,
-                                              fontSize: 14)),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.delete_outline,
-                                            color: AppTheme.danger, size: 20),
-                                        onPressed: () => _removeStudent(i),
+                                  if (needsTeacherPass || needsStudentPass) ...[
+                                    _SectionCard(
+                                      title: 'Senhas de Acesso',
+                                      icon: Icons.lock_outline,
+                                      child: Column(
+                                        children: [
+                                          if (needsTeacherPass) ...[
+                                            TextFormField(
+                                              controller: _teacherPassCtrl,
+                                              obscureText: _obscureTeacher,
+                                              style: const TextStyle(
+                                                  color: AppTheme.textPrimary),
+                                              decoration: InputDecoration(
+                                                labelText: 'Senha do professor',
+                                                prefixIcon: const Icon(Icons
+                                                    .admin_panel_settings_outlined),
+                                                suffixIcon: IconButton(
+                                                  icon: Icon(_obscureTeacher
+                                                      ? Icons.visibility_off
+                                                      : Icons.visibility),
+                                                  onPressed: () => setState(
+                                                      () => _obscureTeacher =
+                                                          !_obscureTeacher),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                          if (needsTeacherPass &&
+                                              needsStudentPass)
+                                            const SizedBox(height: 12),
+                                          if (needsStudentPass)
+                                            TextFormField(
+                                              controller: _studentPassCtrl,
+                                              obscureText: _obscureStudent,
+                                              style: const TextStyle(
+                                                  color: AppTheme.textPrimary),
+                                              decoration: InputDecoration(
+                                                labelText:
+                                                    'Senha dos alunos (única)',
+                                                prefixIcon: const Icon(
+                                                    Icons.group_outlined),
+                                                suffixIcon: IconButton(
+                                                  icon: Icon(_obscureStudent
+                                                      ? Icons.visibility_off
+                                                      : Icons.visibility),
+                                                  onPressed: () => setState(
+                                                      () => _obscureStudent =
+                                                          !_obscureStudent),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                     ),
-                                  ),
+                                    const SizedBox(height: 16),
+                                  ],
+                                  if (needsStudents) ...[
+                                    _SectionCard(
+                                      title:
+                                          'Lista de Alunos (${_students.length})',
+                                      icon: Icons.people_outline,
+                                      trailing: TextButton.icon(
+                                        onPressed: _importStudents,
+                                        icon: const Icon(Icons.upload_file,
+                                            size: 16),
+                                        label: const Text(
+                                            'Importar arquivo/texto'),
+                                        style: TextButton.styleFrom(
+                                            foregroundColor: AppTheme.accent),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: TextFormField(
+                                                  controller: _studentNameCtrl,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          AppTheme.textPrimary),
+                                                  decoration:
+                                                      const InputDecoration(
+                                                    labelText: 'Nome do aluno',
+                                                    hintText: 'Ex: Maria Silva',
+                                                    hintStyle: TextStyle(
+                                                        color: AppTheme
+                                                            .textSecondary),
+                                                  ),
+                                                  onFieldSubmitted: (_) =>
+                                                      _addStudent(),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              IconButton(
+                                                onPressed: _addStudent,
+                                                icon: const Icon(
+                                                    Icons.add_circle,
+                                                    color: AppTheme.success,
+                                                    size: 32),
+                                                tooltip: 'Adicionar aluno',
+                                              ),
+                                            ],
+                                          ),
+                                          if (_students.isNotEmpty) ...[
+                                            const SizedBox(height: 12),
+                                            ListView.builder(
+                                              shrinkWrap: true,
+                                              physics:
+                                                  const NeverScrollableScrollPhysics(),
+                                              itemCount: _students.length,
+                                              itemBuilder: (_, i) => ListTile(
+                                                dense: true,
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 4),
+                                                leading: CircleAvatar(
+                                                  backgroundColor: AppTheme
+                                                      .primary
+                                                      .withValues(alpha: 0.15),
+                                                  child: Text(
+                                                    '${i + 1}',
+                                                    style: const TextStyle(
+                                                        color: AppTheme.primary,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        fontSize: 13),
+                                                  ),
+                                                ),
+                                                title: Text(_students[i].name,
+                                                    style: const TextStyle(
+                                                        color: AppTheme
+                                                            .textPrimary,
+                                                        fontSize: 14)),
+                                                trailing: IconButton(
+                                                  icon: const Icon(
+                                                      Icons.delete_outline,
+                                                      color: AppTheme.danger,
+                                                      size: 20),
+                                                  onPressed: () =>
+                                                      _removeStudent(i),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
                                 ],
-                              ],
-                            ),
+                              );
+                            },
                           ),
-                          const SizedBox(height: 16),
 
                           if (_error != null)
                             Container(

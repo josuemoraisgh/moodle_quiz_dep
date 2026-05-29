@@ -36,6 +36,13 @@ Future<void> seedOfflineConfigData(
   QuizRuntimeConfig config,
   LocalDatasource datasource,
 ) async {
+  if (config.singleQuestionByDependency && config.questions.isNotEmpty) {
+    final runtimeName =
+        '${config.initialQuizName} #${config.questions.first.slot}';
+    await datasource.saveQuiz(runtimeName, config.questions);
+    return;
+  }
+
   if (!config.settings.isFirstRun) {
     final current = await datasource.loadSettings();
     if (current.isFirstRun) {
