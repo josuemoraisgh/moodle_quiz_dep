@@ -23,16 +23,14 @@ class AuthController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isLoggedIn => _user != null;
+  bool get isGuest => _user?.isGuest ?? false;
   bool get needsTeacherPassword => _settings.teacherPassword.trim().isEmpty;
   bool get needsStudentPassword => _settings.studentPassword.trim().isEmpty;
   bool get needsQuizTitle => _settings.quizTitle.trim().isEmpty;
   bool get needsStudents => _students.isEmpty;
   bool get requiresSetup =>
       _repo.supportsLocalSetup &&
-      (needsTeacherPassword ||
-          needsStudentPassword ||
-          needsQuizTitle ||
-          needsStudents);
+      (needsTeacherPassword || needsStudentPassword || needsQuizTitle);
   bool get isOnlineMode => !_repo.supportsLocalSetup;
 
   /// Inicialização: carrega configurações, lista de alunos e sessão salva.
@@ -67,6 +65,13 @@ class AuthController extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  /// Autentica como convidado (acesso somente-leitura, sem persistência).
+  Future<void> loginAsGuest() async {
+    _user = const LocalUserEntity(id: -1, name: 'Convidado', isTeacher: false);
+    _error = null;
+    notifyListeners();
   }
 
   Future<void> logout() async {

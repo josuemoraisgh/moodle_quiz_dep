@@ -17,7 +17,7 @@ class AppRouter {
   static const String professorSetup = '/professor/setup';
   static const String professorQuiz = '/professor/quiz';
   static const String professor = '/professor';
-  static const String professorHome = '/professor'; // alias
+  static const String professorHome = '/professor';
   static const String professorRank = '/professor/rank';
   static const String studentLobby = '/student/lobby';
   static const String guestQuestion = '/guest/question';
@@ -32,18 +32,21 @@ class AppRouter {
         final runtime = context.read<QuizRuntimeConfig>();
         final loc = state.matchedLocation;
 
+        // ── /guest/question ──────────────────────────────────────────────────
         if (loc == guestQuestion) {
           if (!runtime.singleQuestionByDependency) {
-            return auth.isLoggedIn
-                ? (auth.user!.isTeacher ? professorQuiz : studentLobby)
-                : login;
+            // Modo standalone: redireciona conforme perfil
+            if (!auth.isLoggedIn) return login;
+            if (auth.user!.isTeacher) return professorQuiz;
+            if (auth.user!.isGuest) return null; // convidado vê read-only
+            return studentLobby;
           }
+          // Modo dependência: professor vai para gestão; aluno/convidado ficam.
           if (!auth.isLoggedIn) return null;
-          // Modo dependência: professor vai para tela de gestão, aluno permanece.
           return auth.user!.isTeacher ? professorQuiz : null;
         }
 
-        // Setup: abre quando há configuração pendente OU ?force (professor panel).
+        // ── /professor/setup ─────────────────────────────────────────────────
         if (loc == professorSetup) {
           final force = state.uri.queryParameters.containsKey('force');
           if (force || auth.requiresSetup) return null;
@@ -51,17 +54,30 @@ class AppRouter {
           return auth.user!.isTeacher ? professorQuiz : studentLobby;
         }
 
-        // Não autenticado → login
+        // ── Não autenticado → login ──────────────────────────────────────────
         if (!auth.isLoggedIn && loc != login) return login;
 
+        // ── Redirecionamentos por perfil ─────────────────────────────────────
         if (auth.isLoggedIn) {
           final user = auth.user!;
+
+          // Convidado só pode ficar em guestQuestion ou login
+          if (user.isGuest) {
+            if (loc != login && loc != guestQuestion) return guestQuestion;
+            return null;
+          }
+
+          // Na tela de login → vai para dashboard adequado
           if (loc == login) {
             return user.isTeacher ? professorQuiz : studentLobby;
           }
+
+          // Aluno tentando acessar área do professor
           if (!user.isTeacher && loc.startsWith('/professor')) {
             return studentLobby;
           }
+
+          // Professor tentando acessar área do aluno
           if (user.isTeacher && loc.startsWith('/student')) {
             return professorQuiz;
           }

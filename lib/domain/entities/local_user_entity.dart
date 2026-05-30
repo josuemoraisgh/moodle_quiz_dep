@@ -25,6 +25,9 @@ class LocalUserEntity extends Equatable {
   String get fullname => name;
   bool get isOnlineUser => token.isNotEmpty && baseUrl.isNotEmpty;
 
+  /// Convidado: acesso somente-leitura sem cadastro.
+  bool get isGuest => id == -1 && !isTeacher;
+
   @override
   List<Object?> get props => [
         id,

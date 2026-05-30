@@ -14,6 +14,12 @@ abstract class QuizSyncServer {
   set onScore(Future<void> Function(Map<String, dynamic> body)? callback);
   set onReset(Future<void> Function()? callback);
 
+  /// Autentica via browser (página web no servidor offline).
+  /// Retorna Map com {name, role, studentId} em caso de sucesso, ou null.
+  set onLogin(
+      Future<Map<String, dynamic>?> Function(String name, String password)?
+          callback);
+
   Future<void> start();
   Future<void> stop();
 }
@@ -44,6 +50,11 @@ class HostedQuizSyncServer implements QuizSyncServer {
 
   @override
   set onReset(Future<void> Function()? callback) {}
+
+  @override
+  set onLogin(
+      Future<Map<String, dynamic>?> Function(String name, String password)?
+          callback) {}
 
   @override
   Future<void> start() async {}

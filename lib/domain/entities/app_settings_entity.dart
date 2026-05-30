@@ -14,9 +14,14 @@ class AppSettingsEntity {
     this.durationOptions = const [15, 20, 30, 45, 60, 90, 120],
   });
 
-  /// Primeira execução: nenhuma senha configurada ainda.
+  /// Senhas padrão de fábrica.
+  static const String defaultTeacherPassword = 'Josue123456';
+  static const String defaultStudentPassword = '123456';
+
+  /// Primeira execução: senhas ainda não foram personalizadas.
   bool get isFirstRun =>
-      teacherPassword.trim().isEmpty && studentPassword.trim().isEmpty;
+      teacherPassword == defaultTeacherPassword &&
+      studentPassword == defaultStudentPassword;
 
   AppSettingsEntity copyWith({
     String? teacherPassword,
@@ -36,7 +41,7 @@ class AppSettingsEntity {
   }
 
   static AppSettingsEntity defaults() => const AppSettingsEntity(
-        teacherPassword: '',
-        studentPassword: '',
+        teacherPassword: defaultTeacherPassword,
+        studentPassword: defaultStudentPassword,
       );
 }

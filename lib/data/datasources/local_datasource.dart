@@ -3,13 +3,7 @@ import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/database/app_database.dart';
-import '../../core/utils/moodle_html_parser.dart'
-    show
-        GapInputData,
-        MatchData,
-        MatchSubQuestion,
-        MoodleAnswerControl,
-        ParsedChoice;
+import '../../core/utils/question_serializer.dart';
 import '../../domain/entities/answer_record_entity.dart';
 import '../../domain/entities/app_settings_entity.dart';
 import '../../domain/entities/local_quiz_entity.dart';
@@ -42,8 +36,10 @@ class LocalDatasource {
             .whereType<int>()
             .toList();
     return AppSettingsEntity(
-      teacherPassword: map['teacher_password'] ?? '',
-      studentPassword: map['student_password'] ?? '',
+      teacherPassword: map['teacher_password'] ??
+          AppSettingsEntity.defaultTeacherPassword,
+      studentPassword: map['student_password'] ??
+          AppSettingsEntity.defaultStudentPassword,
       quizTitle: map['quiz_title'] ?? 'Quiz Presencial',
       defaultDurationSeconds: int.tryParse(map['default_duration'] ?? '') ?? 30,
       durationOptions:
@@ -394,144 +390,8 @@ class LocalDatasource {
 
   // ── Question serialization ────────────────────────────────────────────────
 
-  String _encodeQuestion(QuestionEntity q) => jsonEncode({
-        'slot': q.slot,
-        'page': q.page,
-        'text': q.text,
-        'htmlText': q.htmlText,
-        'displayHtml': q.displayHtml,
-        'type': q.type,
-        'generalFeedback': q.generalFeedback,
-        'rightAnswerHtml': q.rightAnswerHtml,
-        'inputBaseName': q.inputBaseName,
-        'seqCheck': q.seqCheck,
-        'answerInputName': q.answerInputName,
-        'imageUrls': q.imageUrls,
-        'choices': q.choices.map(_encodeChoice).toList(),
-        'answerControls': q.answerControls.map(_encodeControl).toList(),
-        'matchData': q.matchData == null ? null : _encodeMatch(q.matchData!),
-        'gapInputData':
-            q.gapInputData == null ? null : _encodeGap(q.gapInputData!),
-      });
+  String _encodeQuestion(QuestionEntity q) => QuestionSerializer.encode(q);
 
-  QuestionEntity _decodeQuestion(Map<String, dynamic> row) {
-    final data = jsonDecode(row['data'] as String) as Map<String, dynamic>;
-    return QuestionEntity(
-      slot: data['slot'] as int? ?? 1,
-      page: data['page'] as int? ?? 0,
-      text: data['text'] as String? ?? '',
-      htmlText: data['htmlText'] as String? ?? '',
-      displayHtml: data['displayHtml'] as String? ?? '',
-      type: data['type'] as String? ?? 'multichoice',
-      generalFeedback: data['generalFeedback'] as String? ?? '',
-      rightAnswerHtml: data['rightAnswerHtml'] as String? ?? '',
-      inputBaseName: data['inputBaseName'] as String? ?? '',
-      seqCheck: data['seqCheck'] as String? ?? '',
-      answerInputName: data['answerInputName'] as String?,
-      imageUrls: (data['imageUrls'] as List<dynamic>? ?? [])
-          .map((e) => e.toString())
-          .toList(),
-      choices:
-          (data['choices'] as List<dynamic>? ?? []).map(_decodeChoice).toList(),
-      answerControls: (data['answerControls'] as List<dynamic>? ?? [])
-          .map(_decodeControl)
-          .toList(),
-      matchData:
-          data['matchData'] == null ? null : _decodeMatch(data['matchData']),
-      gapInputData: data['gapInputData'] == null
-          ? null
-          : _decodeGap(data['gapInputData']),
-    );
-  }
-
-  Map<String, dynamic> _encodeChoice(ParsedChoice c) => {
-        'value': c.value,
-        'text': c.text,
-        'htmlText': c.htmlText,
-        'isCorrect': c.isCorrect,
-      };
-
-  ParsedChoice _decodeChoice(dynamic d) {
-    final m = d as Map<String, dynamic>;
-    return ParsedChoice(
-      value: m['value'] as String? ?? '',
-      text: m['text'] as String? ?? '',
-      htmlText: m['htmlText'] as String? ?? '',
-      isCorrect: m['isCorrect'] as bool? ?? false,
-    );
-  }
-
-  Map<String, dynamic> _encodeControl(MoodleAnswerControl c) => {
-        'type': c.type,
-        'name': c.name,
-        'value': c.value,
-        'label': c.label,
-        'htmlLabel': c.htmlLabel,
-        'options': c.options.map(_encodeChoice).toList(),
-      };
-
-  MoodleAnswerControl _decodeControl(dynamic d) {
-    final m = d as Map<String, dynamic>;
-    return MoodleAnswerControl(
-      type: m['type'] as String? ?? 'text',
-      name: m['name'] as String? ?? '',
-      value: m['value'] as String? ?? '',
-      label: m['label'] as String? ?? '',
-      htmlLabel: m['htmlLabel'] as String? ?? '',
-      options:
-          (m['options'] as List<dynamic>? ?? []).map(_decodeChoice).toList(),
-    );
-  }
-
-  Map<String, dynamic> _encodeMatch(MatchData m) => {
-        'subQuestions': m.subQuestions
-            .map((s) => {
-                  'text': s.text,
-                  'htmlText': s.htmlText,
-                  'inputName': s.inputName,
-                  'correctValue': s.correctValue,
-                })
-            .toList(),
-        'options': m.options.map(_encodeChoice).toList(),
-      };
-
-  MatchData _decodeMatch(dynamic d) {
-    final m = d as Map<String, dynamic>;
-    return MatchData(
-      subQuestions: (m['subQuestions'] as List<dynamic>? ?? []).map((s) {
-        final sm = s as Map<String, dynamic>;
-        return MatchSubQuestion(
-          text: sm['text'] as String? ?? '',
-          htmlText: sm['htmlText'] as String? ?? '',
-          inputName: sm['inputName'] as String? ?? '',
-          correctValue: sm['correctValue'] as String?,
-        );
-      }).toList(),
-      options:
-          (m['options'] as List<dynamic>? ?? []).map(_decodeChoice).toList(),
-    );
-  }
-
-  Map<String, dynamic> _encodeGap(GapInputData g) => {
-        'inputNamePrefix': g.inputNamePrefix,
-        'gapCount': g.gapCount,
-        'options': g.options.map(_encodeChoice).toList(),
-        'optionsByGap': g.optionsByGap
-            .map((list) => list.map(_encodeChoice).toList())
-            .toList(),
-      };
-
-  GapInputData _decodeGap(dynamic d) {
-    final m = d as Map<String, dynamic>;
-    final rawByGap = m['optionsByGap'] as List<dynamic>? ?? [];
-    return GapInputData(
-      inputNamePrefix: m['inputNamePrefix'] as String? ?? '',
-      gapCount: m['gapCount'] as int? ?? 0,
-      options:
-          (m['options'] as List<dynamic>? ?? []).map(_decodeChoice).toList(),
-      optionsByGap: rawByGap
-          .map((list) => (list as List<dynamic>).map(_decodeChoice).toList())
-          .toList(),
-    );
-  }
+  QuestionEntity _decodeQuestion(Map<String, dynamic> row) =>
+      QuestionSerializer.decode(row['data'] as String);
 }

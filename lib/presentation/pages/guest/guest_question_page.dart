@@ -12,9 +12,11 @@ import '../../widgets/question_engine_widget.dart';
 
 /// Tela da apresentação (Port A / singleQuestionByDependency).
 ///
-/// Expõe o callback de login via [quizLoginNotifier] para que o viewer
-/// externo (PresentationViewer) exiba o botão na sua própria toolbar —
-/// evitando barra dupla no modo embedado.
+/// Expõe callbacks via notifiers para que o [PresentationViewer] exiba os
+/// botões de login/logout na sua própria toolbar — evitando barra dupla no
+/// modo embedado:
+///   • [quizLoginNotifier]  — não autenticado → botão "Entrar"
+///   • [quizLogoutNotifier] — autenticado    → botão "Sair"
 class GuestQuestionPage extends StatefulWidget {
   const GuestQuestionPage({super.key});
 
@@ -25,13 +27,9 @@ class GuestQuestionPage extends StatefulWidget {
 class _GuestQuestionPageState extends State<GuestQuestionPage> {
   AuthController? _auth;
 
-  // Callback atual registrado no notifier — usado para evitar que dispose()
-  // de uma instância sainte sobreponha o valor já definido pela instância
-  // entrante (race durante AnimatedSwitcher).
-  VoidCallback? _activeCallback;
+  VoidCallback? _activeLoginCb;
+  VoidCallback? _activeLogoutCb;
 
-  // Deduplica registros de addPostFrameCallback para evitar acúmulo em
-  // rebuilds rápidos (ex: polling de QuizStateService).
   bool _pendingUpdate = false;
 
   @override
@@ -54,26 +52,44 @@ class _GuestQuestionPageState extends State<GuestQuestionPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _pendingUpdate = false;
       if (!mounted) return;
-      final canLogin = !(_auth?.isLoggedIn ?? true);
-      final cb = canLogin
-          ? () {
+
+      final loggedIn = _auth?.isLoggedIn ?? false;
+
+      // Login callback: só quando não autenticado.
+      final loginCb = loggedIn
+          ? null
+          : () {
               try {
                 if (context.mounted) context.go(AppRouter.login);
               } catch (_) {}
+            };
+
+      // Logout callback: só quando autenticado.
+      final logoutCb = loggedIn
+          ? () async {
+              try {
+                await _auth?.logout();
+              } catch (_) {}
             }
           : null;
-      _activeCallback = cb;
-      quizLoginNotifier.value = cb;
+
+      _activeLoginCb = loginCb;
+      _activeLogoutCb = logoutCb;
+      quizLoginNotifier.value = loginCb;
+      quizLogoutNotifier.value = logoutCb;
     });
   }
 
   @override
   void dispose() {
     _auth?.removeListener(_onAuthChanged);
-    // Só limpa o notifier se ainda contém nosso callback — evita apagar
-    // o valor definido pela instância entrante durante uma transição.
-    if (quizLoginNotifier.value == _activeCallback) {
+    // Limpa apenas se ainda é nosso callback — evita apagar valor da instância
+    // entrante durante transição de AnimatedSwitcher.
+    if (quizLoginNotifier.value == _activeLoginCb) {
       quizLoginNotifier.value = null;
+    }
+    if (quizLogoutNotifier.value == _activeLogoutCb) {
+      quizLogoutNotifier.value = null;
     }
     super.dispose();
   }
@@ -109,7 +125,6 @@ class _GuestQuestionPageState extends State<GuestQuestionPage> {
               ),
             ),
           ),
-          // Fullscreen apenas no modo standalone — no embedded o viewer tem o seu.
           if (!runtime.embeddedInPresentation)
             Positioned(
               top: 0,

@@ -8,9 +8,12 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive.dart';
 import '../controllers/auth_controller.dart';
 
-/// Tela de login offline:
-///   • Professor seleciona "Professor" + digita a senha de professor.
-///   • Aluno seleciona o próprio nome no dropdown + digita a senha única.
+/// Tela de autenticação — sempre a primeira tela do sistema.
+///
+/// Três opções:
+///   • Professor  — senha exclusiva, acesso total.
+///   • Aluno      — seleciona o nome + senha compartilhada.
+///   • Convidado  — acesso somente-leitura, sem senha.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -48,10 +51,22 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
     if (auth.error != null) return;
 
+    _navigateAfterLogin(auth);
+  }
+
+  Future<void> _loginAsGuest() async {
+    final auth = context.read<AuthController>();
+    await auth.loginAsGuest();
+    if (!mounted) return;
+    _navigateAfterLogin(auth);
+  }
+
+  void _navigateAfterLogin(AuthController auth) {
     final runtime = context.read<QuizRuntimeConfig>();
-    if (auth.user!.isTeacher) {
+    final user = auth.user!;
+    if (user.isTeacher) {
       context.go(AppRouter.professorQuiz);
-    } else if (runtime.singleQuestionByDependency) {
+    } else if (user.isGuest || runtime.singleQuestionByDependency) {
       context.go(AppRouter.guestQuestion);
     } else {
       context.go(AppRouter.studentLobby);
@@ -75,13 +90,6 @@ class _LoginPageState extends State<LoginPage> {
                       runtime.moodleBaseUrl.isNotEmpty) {
                     _baseUrlCtrl.text = runtime.moodleBaseUrl;
                   }
-                  // Primeira execução: ainda sem senhas configuradas.
-                  if (auth.requiresSetup) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) context.go(AppRouter.professorSetup);
-                    });
-                    return const Center(child: CircularProgressIndicator());
-                  }
 
                   final names = [
                     _professorLabel,
@@ -104,12 +112,14 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Selecione seu nome e entre com a senha',
+                        'Como deseja acessar?',
                         style: TextStyle(
                             color: AppTheme.textSecondary, fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 32),
+
+                      // ── Modo online ───────────────────────────────────────
                       if (auth.isOnlineMode) ...[
                         TextFormField(
                           controller: _baseUrlCtrl,
@@ -124,7 +134,7 @@ class _LoginPageState extends State<LoginPage> {
                           controller: _nameCtrl,
                           style: const TextStyle(color: AppTheme.textPrimary),
                           decoration: const InputDecoration(
-                            labelText: 'Usuario Moodle',
+                            labelText: 'Usuário Moodle',
                             prefixIcon: Icon(Icons.person_outline),
                           ),
                           onFieldSubmitted: (_) => _login(),
@@ -144,7 +154,8 @@ class _LoginPageState extends State<LoginPage> {
                           style: const TextStyle(
                               color: AppTheme.textPrimary, fontSize: 15),
                           hint: const Text('Selecione…',
-                              style: TextStyle(color: AppTheme.textSecondary)),
+                              style:
+                                  TextStyle(color: AppTheme.textSecondary)),
                           items: names
                               .map((n) => DropdownMenuItem(
                                     value: n,
@@ -197,21 +208,15 @@ class _LoginPageState extends State<LoginPage> {
                         _ErrorBox(message: auth.error!),
                       ],
 
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
 
-                      // ── Botão entrar ──────────────────────────────────────
+                      // ── Botão Entrar ──────────────────────────────────────
                       SizedBox(
                         width: double.infinity,
                         height: 52,
-                        child: ElevatedButton(
-                          onPressed: (auth.isLoading ||
-                                  (auth.isOnlineMode
-                                      ? _nameCtrl.text.trim().isEmpty
-                                      : _selectedName == null) ||
-                                  _passCtrl.text.isEmpty)
-                              ? null
-                              : _login,
-                          child: auth.isLoading
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.login_rounded),
+                          label: auth.isLoading
                               ? const SizedBox(
                                   height: 22,
                                   width: 22,
@@ -222,17 +227,69 @@ class _LoginPageState extends State<LoginPage> {
                                   style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700)),
+                          onPressed: (auth.isLoading ||
+                                  (auth.isOnlineMode
+                                      ? _nameCtrl.text.trim().isEmpty
+                                      : _selectedName == null) ||
+                                  _passCtrl.text.isEmpty)
+                              ? null
+                              : _login,
                         ),
                       ),
 
-                      if (!auth.isOnlineMode && auth.requiresSetup) ...[
+                      const SizedBox(height: 12),
+
+                      // ── Divisor ───────────────────────────────────────────
+                      Row(
+                        children: [
+                          const Expanded(
+                              child: Divider(color: AppTheme.textSecondary)),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text('ou',
+                                style: TextStyle(
+                                    color: AppTheme.textSecondary
+                                        .withValues(alpha: 0.6),
+                                    fontSize: 12)),
+                          ),
+                          const Expanded(
+                              child: Divider(color: AppTheme.textSecondary)),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // ── Botão Convidado ───────────────────────────────────
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.visibility_outlined,
+                              size: 18),
+                          label: const Text('Entrar como Convidado',
+                              style: TextStyle(fontSize: 14)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.textSecondary,
+                            side: const BorderSide(
+                                color: AppTheme.textSecondary, width: 0.5),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: auth.isLoading ? null : _loginAsGuest,
+                        ),
+                      ),
+
+                      // ── Link de configuração (visível ao professor) ────────
+                      if (!auth.isOnlineMode) ...[
                         const SizedBox(height: 20),
                         TextButton.icon(
-                          onPressed: () => context.go(AppRouter.professorSetup),
+                          onPressed: () =>
+                              context.go(AppRouter.professorSetup),
                           icon: const Icon(Icons.settings_rounded,
                               size: 16, color: AppTheme.textSecondary),
                           label: const Text(
-                            'Configurar quiz',
+                            'Configurar quiz (Professor)',
                             style: TextStyle(
                                 color: AppTheme.textSecondary, fontSize: 13),
                           ),
@@ -293,7 +350,8 @@ class _ErrorBox extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(message,
-                style: const TextStyle(color: AppTheme.danger, fontSize: 13)),
+                style:
+                    const TextStyle(color: AppTheme.danger, fontSize: 13)),
           ),
         ],
       ),
