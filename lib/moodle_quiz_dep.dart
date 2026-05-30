@@ -1,6 +1,7 @@
 export 'core/config/quiz_runtime_config.dart';
 export 'core/bootstrap/app_dependency_factory.dart';
 export 'core/bootstrap/quiz_core.dart';
+export 'core/services/quiz_state_service.dart';
 export 'core/services/file_import_service.dart';
 export 'app/moodle_quiz_app.dart';
 export 'domain/entities/app_settings_entity.dart';
@@ -14,3 +15,4 @@ export 'domain/repositories/i_quiz_auth_repository.dart';
 export 'domain/repositories/i_quiz_runtime_repository.dart';
 export 'domain/services/quiz_sync_server.dart';
 export 'presentation/widgets/question_engine_widget.dart';
+export 'core/utils/quiz_nav_notifier.dart';

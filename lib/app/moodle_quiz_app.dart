@@ -73,6 +73,8 @@ class MoodleQuizApp extends StatelessWidget {
     int courseId = 0,
     int localServerPort = 8080,
     bool startLocalServer = true,
+    int slideDisplayIndex = 0,
+    bool embeddedInPresentation = false,
   }) {
     final runtimeQuestion = question == null
         ? null
@@ -109,6 +111,8 @@ class MoodleQuizApp extends StatelessWidget {
       localServerPort: localServerPort,
       startLocalServer: startLocalServer,
       singleQuestionByDependency: runtimeQuestion != null,
+      slideDisplayIndex: slideDisplayIndex,
+      embeddedInPresentation: embeddedInPresentation,
     );
 
     return create(

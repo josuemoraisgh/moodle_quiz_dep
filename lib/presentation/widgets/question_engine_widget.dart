@@ -32,6 +32,11 @@ class QuestionEngineWidget extends StatelessWidget {
   final void Function(String inputName, String value)? onSelectAnswer;
   final VoidCallback? onSubmit;
 
+  final bool showTypeHeader;
+  final double? baseFontSize;   // null = usa padrão automático
+  final double choiceSpacing;   // espaço abaixo de cada alternativa
+  final bool showPrompt;        // false = omite o card de enunciado (mostra só alternativas)
+
   const QuestionEngineWidget({
     super.key,
     required this.question,
@@ -42,6 +47,10 @@ class QuestionEngineWidget extends StatelessWidget {
     this.isSubmitting = false,
     this.showCorrect = false,
     this.compact = false,
+    this.showTypeHeader = true,
+    this.baseFontSize,
+    this.choiceSpacing = 10,
+    this.showPrompt = true,
     this.onSelectAnswer,
     this.onSubmit,
   });
@@ -61,7 +70,7 @@ class QuestionEngineWidget extends StatelessWidget {
     final isMobile = Responsive.isMobile(context);
     final spec = _uiSpec;
     final textStyle = GoogleFonts.nunito(
-      fontSize: compact ? 14 : (isMobile ? 16 : 18),
+      fontSize: baseFontSize ?? (compact ? 14 : (isMobile ? 16 : 18)),
       fontWeight: FontWeight.w600,
       color: AppTheme.textPrimary,
       height: 1.5,
@@ -72,10 +81,14 @@ class QuestionEngineWidget extends StatelessWidget {
         _buildTimer(),
         SizedBox(height: compact ? 10 : 16),
       ],
-      _buildQuestionTypeHeader(spec),
-      SizedBox(height: compact ? 8 : 12),
-      _buildQuestionPrompt(textStyle),
-      SizedBox(height: compact ? 10 : 16),
+      if (showTypeHeader) ...[
+        _buildQuestionTypeHeader(spec),
+        SizedBox(height: compact ? 8 : 12),
+      ],
+      if (showPrompt) ...[
+        _buildQuestionPrompt(textStyle),
+        SizedBox(height: compact ? 10 : 16),
+      ],
       ..._buildAnswerSurface(textStyle),
       if (_isAnswerMode) ...[
         SizedBox(height: compact ? 12 : 20),
@@ -170,7 +183,7 @@ class QuestionEngineWidget extends StatelessWidget {
     if (compact) return content;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(20, showTypeHeader ? 20 : 8, 20, 20),
       decoration: AppTheme.cardDecoration(glowing: _isAnswerMode),
       child: content,
     );
@@ -278,29 +291,7 @@ class QuestionEngineWidget extends StatelessWidget {
     }
 
     if (surface.isNotEmpty) {
-      if (!_isAnswerMode &&
-          showCorrect &&
-          question.rightAnswerHtml.isNotEmpty) {
-        surface.add(SizedBox(height: compact ? 8 : 12));
-        surface.add(_buildRightAnswerCard(textStyle));
-      } else if (!_isAnswerMode &&
-          showCorrect &&
-          question.rightAnswerHtml.isEmpty) {
-        surface.add(SizedBox(height: compact ? 8 : 12));
-        surface.add(
-          _buildInfoBanner(
-            icon: Icons.rule_rounded,
-            color: AppTheme.warning,
-            message:
-                'O Moodle nao retornou o bloco de resposta correta para este tipo nesta tentativa/revisao.',
-          ),
-        );
-      }
       return surface;
-    }
-
-    if (!_isAnswerMode && showCorrect && question.rightAnswerHtml.isNotEmpty) {
-      return [_buildRightAnswerCard(textStyle)];
     }
 
     if (_isAnswerMode) {
@@ -432,7 +423,7 @@ class QuestionEngineWidget extends StatelessWidget {
         final isIncorrectState =
             showCorrect && selectedByUser && !choice.isCorrect;
         return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: choiceSpacing),
           child: OptionButton(
             label: letter,
             text: choice.text,
@@ -441,6 +432,7 @@ class QuestionEngineWidget extends StatelessWidget {
             isCorrectState: isCorrectState,
             isIncorrectState: isIncorrectState,
             isDisabled: _controlsDisabled,
+            fontSize: baseFontSize ?? 15,
             onTap: () =>
                 onSelectAnswer?.call(question.inputBaseName, choice.value),
           ),
@@ -1096,35 +1088,6 @@ class QuestionEngineWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildRightAnswerCard(TextStyle textStyle) {
-    if (question.rightAnswerHtml.isEmpty) return const SizedBox.shrink();
-    return Container(
-      margin: const EdgeInsets.only(top: 4, bottom: 4),
-      padding: EdgeInsets.all(compact ? 10 : 14),
-      decoration: BoxDecoration(
-        color: AppTheme.success.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.success, width: 1.5),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.check_circle_rounded,
-              color: AppTheme.success, size: compact ? 16 : 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: MoodleHtmlRenderer(
-              html: question.rightAnswerHtml,
-              textStyle: textStyle.copyWith(
-                color: AppTheme.success,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   static Widget _buildInfoBanner({
     required IconData icon,

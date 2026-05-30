@@ -5,9 +5,12 @@ import '../../domain/entities/student_entity.dart';
 import '../../domain/repositories/i_quiz_auth_repository.dart';
 
 class InMemoryAuthRepository implements IQuizAuthRepository {
+  // Sessão compartilhada entre todas as instâncias (navegação entre slides).
+  // Zerada somente em clearSession() — logout explícito.
+  static LocalUserEntity? _sharedSession;
+
   AppSettingsEntity _settings;
   List<StudentEntity> _students;
-  LocalUserEntity? _session;
 
   InMemoryAuthRepository({
     required AppSettingsEntity settings,
@@ -68,14 +71,14 @@ class InMemoryAuthRepository implements IQuizAuthRepository {
 
   @override
   Future<void> saveSession(LocalUserEntity user) async {
-    _session = user;
+    _sharedSession = user;
   }
 
   @override
-  Future<LocalUserEntity?> loadSession() async => _session;
+  Future<LocalUserEntity?> loadSession() async => _sharedSession;
 
   @override
   Future<void> clearSession() async {
-    _session = null;
+    _sharedSession = null;
   }
 }

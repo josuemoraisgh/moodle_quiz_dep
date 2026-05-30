@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../../data/repositories/in_memory_quiz_repository.dart';
 import '../../domain/entities/app_settings_entity.dart';
 import '../../domain/entities/local_quiz_entity.dart';
 import '../../domain/entities/question_entity.dart';
@@ -121,5 +122,20 @@ Future<Widget> buildQuizAppWithDependencies({
     questions: questions,
     initialQuizName: initialQuizName,
     stateService: stateService,
+  );
+}
+
+/// Cria [IQuizRuntimeRepository] em memória com dados de um config específico.
+/// Permite reutilizar um [QuizCore] cacheado com questões diferentes a cada slide.
+IQuizRuntimeRepository buildInMemoryQuizRepo({
+  required QuizRuntimeConfig config,
+  required QuizStateService stateService,
+}) {
+  return InMemoryQuizRepository(
+    stateService: stateService,
+    students: config.students,
+    quizzes: config.quizzes,
+    questions: config.questions,
+    initialQuizName: config.initialQuizName,
   );
 }

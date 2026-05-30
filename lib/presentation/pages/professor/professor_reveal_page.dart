@@ -74,502 +74,170 @@ class _RevealScaffoldState extends State<_RevealScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    final state = widget.state;
     final question = widget.question;
     final hasFeedback = question != null && question.generalFeedback.isNotEmpty;
+    final questionNumber = widget.questionIndex >= 0
+        ? 'Questão ${widget.questionIndex + 1}'
+        : 'Questão';
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // ── AppBar ────────────────────────────────────────────
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                          color: AppTheme.textSecondary, size: 20),
-                      onPressed: () => context.pop(),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        widget.questionIndex >= 0
-                            ? 'Gabarito — Questão ${widget.questionIndex + 1}'
-                                '${state.totalPages > 0 ? ' de ${state.totalPages}' : ''}'
-                            : 'Gabarito',
-                        style: const TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 17),
-                      ),
-                    ),
-                    if (question != null) ...[
-                      const SizedBox(width: 8),
-                      FilterChip(
-                        selected: _showCorrectAnswer,
-                        onSelected: (value) =>
-                            setState(() => _showCorrectAnswer = value),
-                        avatar: Icon(
-                          _showCorrectAnswer
-                              ? Icons.check_circle_rounded
-                              : Icons.visibility_rounded,
-                          size: 16,
-                          color: _showCorrectAnswer
-                              ? AppTheme.success
-                              : AppTheme.textSecondary,
-                        ),
-                        label: const Text('Resposta correta'),
-                        selectedColor: AppTheme.success.withValues(alpha: 0.18),
-                        backgroundColor: AppTheme.bgCardAlt,
-                        side: BorderSide(
-                          color: _showCorrectAnswer
-                              ? AppTheme.success
-                              : AppTheme.bgCardAlt,
-                        ),
-                        labelStyle: TextStyle(
-                          color: _showCorrectAnswer
-                              ? AppTheme.success
-                              : AppTheme.textSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                    if (hasFeedback)
-                      TextButton.icon(
-                        onPressed: () =>
-                            setState(() => _showFeedback = !_showFeedback),
-                        icon: Icon(
-                          _showFeedback
-                              ? Icons.list_alt_rounded
-                              : Icons.feedback_outlined,
-                          size: 16,
-                        ),
-                        label: Text(
-                          _showFeedback
-                              ? 'Ver alternativas'
-                              : 'Ver feedback geral',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppTheme.textSecondary,
-                          backgroundColor: AppTheme.bgCardAlt,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
-              // ── Conteúdo ─────────────────────────────────────────
-              Expanded(
-                child: question == null
-                    ? const Center(
-                        child: Text('Nenhuma questão disponível.',
-                            style: TextStyle(color: AppTheme.textSecondary)),
-                      )
-                    : _QuestionReveal(
-                        question: question,
-                        showFeedback: _showFeedback,
-                        showCorrect: _showCorrectAnswer,
-                      ),
-              ),
-
-              // ── Checkbox mostrar resposta correta ─────────────────
-              if (question != null)
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: Checkbox(
-                          value: _showCorrectAnswer,
-                          onChanged: (v) =>
-                              setState(() => _showCorrectAnswer = v ?? false),
-                          activeColor: AppTheme.success,
-                          side: const BorderSide(color: AppTheme.textSecondary),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () => setState(
-                            () => _showCorrectAnswer = !_showCorrectAnswer),
-                        child: const Text(
-                          'Mostrar resposta correta',
-                          style: TextStyle(
-                              color: AppTheme.textSecondary, fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuestionReveal extends StatelessWidget {
-  final QuestionEntity question;
-  final bool showFeedback;
-  final bool showCorrect;
-  const _QuestionReveal({
-    required this.question,
-    required this.showFeedback,
-    this.showCorrect = false,
-  });
-
-  static const _letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-
-  @override
-  Widget build(BuildContext context) {
-    final isMobile = Responsive.isMobile(context);
-    final questionTextStyle = TextStyle(
-      fontSize: isMobile ? 16 : 20,
-      color: AppTheme.textPrimary,
-      height: 1.5,
-    );
-
-    // Decide qual HTML usar para o enunciado
-    final questionHtml = question.isMultiChoice
-        ? (question.htmlText.isNotEmpty ? question.htmlText : '')
-        : (question.displayHtml.isNotEmpty
-            ? question.displayHtml
-            : question.htmlText);
-
-    if (!showFeedback) {
-      return SingleChildScrollView(
-        padding:
-            Responsive.horizontalPadding(context).copyWith(top: 8, bottom: 32),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: QuestionEngineWidget(
-              question: question,
-              mode: QuestionEngineMode.reveal,
-              showCorrect: showCorrect,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return SingleChildScrollView(
-      padding:
-          Responsive.horizontalPadding(context).copyWith(top: 8, bottom: 32),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ── Enunciado ────────────────────────────────────────────
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: AppTheme.cardDecoration(glowing: false),
-                child: questionHtml.isNotEmpty
-                    ? MoodleHtml(
-                        html: questionHtml, textStyle: questionTextStyle)
-                    : Text(
-                        question.text,
-                        style: TextStyle(
-                          fontSize: isMobile ? 17 : 21,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary,
-                          height: 1.5,
-                        ),
-                      ),
-              ),
-
-              const SizedBox(height: 16),
-
-              if (!showFeedback) ...[
-                // ── Gabarito por tipo ────────────────────────────────────
-
-                // Múltipla escolha / V-F / Calculada múltipla: lista de alternativas
-                if (question.isMultiChoice && question.choices.isNotEmpty)
-                  ..._buildChoicesList(isMobile),
-
-                // Associação (Match): tabela premissa → resposta
-                if (question.isMatch) _buildMatchReveal(isMobile),
-
-                // Numérica / Calculada / Resposta curta: rightAnswerHtml
-                if ((question.isNumerical || question.isShortAnswer) &&
-                    showCorrect &&
-                    question.rightAnswerHtml.isNotEmpty)
-                  _buildRightAnswerCard(isMobile),
-
-                // GapSelect / DDwtos / Cloze / Ordering / GeoGebra / DDImage:
-                // mostra o rightAnswerHtml se disponível
-                if (!question.isMultiChoice &&
-                    !question.isMatch &&
-                    !question.isNumerical &&
-                    !question.isShortAnswer &&
-                    showCorrect &&
-                    question.rightAnswerHtml.isNotEmpty)
-                  _buildRightAnswerCard(isMobile),
-              ] else
-                // ── Feedback geral ───────────────────────────────────────
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: AppTheme.cardDecoration(glowing: false),
-                  child: question.generalFeedback.isNotEmpty
-                      ? _MoodleFeedbackHtml(
-                          html: question.generalFeedback,
-                          textStyle: TextStyle(
-                            fontSize: isMobile ? 15 : 17,
-                            color: AppTheme.textPrimary,
-                            height: 1.6,
-                          ),
-                        )
-                      : const Text(
-                          'Nenhum feedback disponível para esta questão.',
-                          style: TextStyle(
-                              color: AppTheme.textSecondary, fontSize: 15),
-                        ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildChoicesList(bool isMobile) {
-    return question.choices.asMap().entries.map((e) {
-      final idx = e.key;
-      final choice = e.value;
-      final letter = idx < _letters.length ? _letters[idx] : '${idx + 1}';
-      final correct = showCorrect && choice.isCorrect;
-
-      return Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: correct
-              ? AppTheme.success.withValues(alpha: 0.18)
-              : AppTheme.bgCard,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: correct ? AppTheme.success : AppTheme.bgCardAlt,
-            width: correct ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: correct ? AppTheme.success : AppTheme.bgDark,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Text(
-                  letter,
-                  style: TextStyle(
-                    color: correct ? Colors.white : AppTheme.textSecondary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: choice.htmlText.isNotEmpty
-                  ? MoodleHtml(
-                      html: choice.htmlText,
-                      textStyle: TextStyle(
-                        color:
-                            correct ? AppTheme.success : AppTheme.textPrimary,
-                        fontSize: isMobile ? 14 : 16,
-                        fontWeight: correct ? FontWeight.w700 : FontWeight.w500,
-                        height: 1.4,
-                      ),
-                    )
-                  : Text(
-                      choice.text,
-                      style: TextStyle(
-                        color:
-                            correct ? AppTheme.success : AppTheme.textPrimary,
-                        fontSize: isMobile ? 14 : 16,
-                        fontWeight: correct ? FontWeight.w700 : FontWeight.w500,
-                      ),
-                    ),
-            ),
-            if (correct)
-              const Icon(Icons.check_circle_rounded,
-                  color: AppTheme.success, size: 24),
-          ],
-        ),
-      );
-    }).toList();
-  }
-
-  Widget _buildMatchReveal(bool isMobile) {
-    final matchData = question.matchData;
-    if (matchData == null || matchData.subQuestions.isEmpty) {
-      return _buildRightAnswerCard(isMobile);
-    }
-
-    // Mapa de value → texto da opção
-    final optionText = {
-      for (final o in matchData.options) o.value: o.text,
-    };
-    // Se temos o HTML de revisão, usa o rightAnswerHtml; caso contrário monta da estrutura
-    if (question.rightAnswerHtml.isNotEmpty && showCorrect) {
-      return _buildRightAnswerCard(isMobile);
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.bgCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.bgCardAlt),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: Stack(
         children: [
-          // Cabeçalho
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppTheme.bgDark,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.compare_arrows_rounded,
-                    color: AppTheme.accent, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  'Associação',
-                  style: TextStyle(
-                    color: AppTheme.accent,
-                    fontSize: isMobile ? 13 : 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                if (!showCorrect)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Text(
-                      '(ative "Mostrar resposta correta" para ver o gabarito)',
-                      style: TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: isMobile ? 11 : 12,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          // Linhas de premissa → opção correta
-          ...matchData.subQuestions.asMap().entries.map((e) {
-            final idx = e.key;
-            final sub = e.value;
-            final correctText = sub.correctValue != null
-                ? optionText[sub.correctValue] ?? '?'
-                : '—';
-
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: idx > 0
-                      ? BorderSide(color: AppTheme.bgCardAlt)
-                      : BorderSide.none,
-                ),
-              ),
-              child: Row(
+            decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+            child: SafeArea(
+              child: Column(
                 children: [
-                  // Premissa
-                  Expanded(
-                    flex: 3,
-                    child: sub.htmlText.isNotEmpty
-                        ? MoodleHtml(
-                            html: sub.htmlText,
-                            textStyle: TextStyle(
-                                color: AppTheme.textPrimary,
-                                fontSize: isMobile ? 13 : 15),
-                          )
-                        : Text(sub.text,
-                            style: TextStyle(
-                                color: AppTheme.textPrimary,
-                                fontSize: isMobile ? 13 : 15)),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Icon(Icons.arrow_forward_rounded,
-                        color: AppTheme.accent, size: 16),
-                  ),
-                  // Resposta correta
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      showCorrect ? correctText : '______',
-                      style: TextStyle(
-                        color: showCorrect
-                            ? AppTheme.success
-                            : AppTheme.textSecondary,
-                        fontSize: isMobile ? 13 : 15,
-                        fontWeight:
-                            showCorrect ? FontWeight.w700 : FontWeight.w400,
-                      ),
+                  // ── AppBar ────────────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                              color: AppTheme.textSecondary, size: 20),
+                          onPressed: () => context.pop(),
+                        ),
+                        const SizedBox(width: 4),
+                        RichText(
+                          text: TextSpan(children: [
+                            TextSpan(
+                              text: 'Gabarito — $questionNumber',
+                              style: const TextStyle(
+                                color: AppTheme.accent,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                              ),
+                            ),
+                            if (question != null) ...[
+                              TextSpan(
+                                text: ' — ${_plainText(question)}',
+                                style: const TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ]),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const Spacer(),
+                        if (question != null) ...[
+                          IconButton(
+                            icon: Icon(
+                              _showCorrectAnswer
+                                  ? Icons.check_circle_rounded
+                                  : Icons.check_circle_outline_rounded,
+                              color: _showCorrectAnswer
+                                  ? AppTheme.success
+                                  : AppTheme.textSecondary,
+                            ),
+                            tooltip: _showCorrectAnswer
+                                ? 'Ocultar resposta correta'
+                                : 'Mostrar resposta correta',
+                            onPressed: () => setState(
+                                () => _showCorrectAnswer = !_showCorrectAnswer),
+                          ),
+                          if (hasFeedback)
+                            IconButton(
+                              icon: Icon(
+                                _showFeedback
+                                    ? Icons.visibility_off_rounded
+                                    : Icons.feedback_rounded,
+                                color: _showFeedback
+                                    ? AppTheme.warning
+                                    : AppTheme.accent,
+                              ),
+                              tooltip: _showFeedback
+                                  ? 'Ocultar feedback'
+                                  : 'Ver feedback',
+                              onPressed: () => setState(
+                                  () => _showFeedback = !_showFeedback),
+                            ),
+                        ],
+                      ],
                     ),
+                  ),
+
+                  // ── Conteúdo ─────────────────────────────────────────
+                  Expanded(
+                    child: question == null
+                        ? const Center(
+                            child: Text('Nenhuma questão disponível.',
+                                style: TextStyle(
+                                    color: AppTheme.textSecondary)),
+                          )
+                        : Align(
+                            alignment: Alignment.topCenter,
+                            child: SingleChildScrollView(
+                              padding: Responsive.horizontalPadding(context)
+                                  .add(const EdgeInsets.symmetric(vertical: 8)),
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 760),
+                                child: _showFeedback
+                                    ? _FeedbackView(question: question)
+                                    : QuestionEngineWidget(
+                                        question: question,
+                                        mode: QuestionEngineMode.reveal,
+                                        showCorrect: _showCorrectAnswer,
+                                        showTypeHeader: false,
+                                        baseFontSize: 25,
+                                        choiceSpacing: 6,
+                                        selectedAnswers: const {},
+                                        onSelectAnswer: null,
+                                      ),
+                              ),
+                            ),
+                          ),
                   ),
                 ],
               ),
-            );
-          }),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildRightAnswerCard(bool isMobile) {
-    if (question.rightAnswerHtml.isEmpty) return const SizedBox.shrink();
+  static String _plainText(QuestionEntity question) {
+    if (question.htmlText.isNotEmpty) {
+      final parsed = html_parser.parse(question.htmlText);
+      final text = parsed.documentElement?.text ?? '';
+      final normalized = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+      if (normalized.isNotEmpty) return normalized;
+    }
+    return question.text.trim();
+  }
+}
+
+class _FeedbackView extends StatelessWidget {
+  final QuestionEntity question;
+  const _FeedbackView({required this.question});
+
+  @override
+  Widget build(BuildContext context) {
+    final feedback = question.generalFeedback.trim();
+    if (feedback.isEmpty) {
+      return const Center(
+        child: Text(
+          'Nenhum feedback disponível para esta questão.',
+          style: TextStyle(color: AppTheme.textSecondary, fontSize: 16),
+        ),
+      );
+    }
     return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.success.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.success, width: 2),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.check_circle_rounded,
-              color: AppTheme.success, size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: MoodleHtml(
-              html: question.rightAnswerHtml,
-              textStyle: TextStyle(
-                color: AppTheme.success,
-                fontSize: isMobile ? 15 : 17,
-                fontWeight: FontWeight.w700,
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.all(20),
+      decoration: AppTheme.cardDecoration(),
+      child: _MoodleFeedbackHtml(
+        html: feedback,
+        textStyle: const TextStyle(
+          fontSize: 20,
+          color: AppTheme.textPrimary,
+          height: 1.6,
+        ),
       ),
     );
   }

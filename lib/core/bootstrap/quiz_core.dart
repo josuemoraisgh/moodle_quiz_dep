@@ -63,6 +63,9 @@ class QuizCore {
     IQuizAuthRepository? authRepository,
     IQuizRuntimeRepository? quizRepository,
     QuizSyncServer? syncServer,
+    // Overrides por chamada — necessários quando o core é reutilizado entre slides
+    int? slideDisplayIndex,
+    bool? embeddedInPresentation,
   }) {
     final runtimeStateService = stateService ?? QuizStateService();
     final runtimeAuthRepository = authRepository ?? createAuthRepository();
@@ -96,6 +99,9 @@ class QuizCore {
       courseId: baseConfig.courseId,
       localServerPort: baseConfig.localServerPort,
       startLocalServer: baseConfig.startLocalServer,
+      slideDisplayIndex: slideDisplayIndex ?? baseConfig.slideDisplayIndex,
+      embeddedInPresentation:
+          embeddedInPresentation ?? baseConfig.embeddedInPresentation,
     );
   }
 
@@ -106,7 +112,8 @@ class QuizCore {
     required int questionXmlIndex,
   }) {
     if (questionMap != null && questionMap.isNotEmpty) {
-      return QuestionSerializer.fromJson(_normalizeQuestionMap(questionMap));
+      // questionMap vem de QuestionSerializer.toJson → já é Map<String,dynamic>.
+      return QuestionSerializer.fromJson(questionMap);
     }
 
     final xml = questionXml?.trim() ?? '';
@@ -134,41 +141,4 @@ class QuizCore {
     return parsed[questionXmlIndex];
   }
 
-  Map<String, dynamic> _normalizeQuestionMap(Map<String, dynamic> raw) {
-    final normalized = <String, dynamic>{};
-    raw.forEach((key, value) {
-      final k = key.toString();
-      if (value is Map) {
-        normalized[k] = _normalizeNestedMap(value);
-      } else if (value is List) {
-        normalized[k] = _normalizeNestedList(value);
-      } else {
-        normalized[k] = value;
-      }
-    });
-    return normalized;
-  }
-
-  Map<String, dynamic> _normalizeNestedMap(Map raw) {
-    final normalized = <String, dynamic>{};
-    raw.forEach((key, value) {
-      final k = key.toString();
-      if (value is Map) {
-        normalized[k] = _normalizeNestedMap(value);
-      } else if (value is List) {
-        normalized[k] = _normalizeNestedList(value);
-      } else {
-        normalized[k] = value;
-      }
-    });
-    return normalized;
-  }
-
-  List<dynamic> _normalizeNestedList(List raw) {
-    return raw.map((item) {
-      if (item is Map) return _normalizeNestedMap(item);
-      if (item is List) return _normalizeNestedList(item);
-      return item;
-    }).toList(growable: false);
-  }
 }

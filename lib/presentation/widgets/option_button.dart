@@ -12,6 +12,7 @@ class OptionButton extends StatelessWidget {
   final bool isCorrectState;
   final bool isIncorrectState;
   final bool isDisabled;
+  final double fontSize;
   final VoidCallback onTap;
 
   const OptionButton({
@@ -23,6 +24,7 @@ class OptionButton extends StatelessWidget {
     this.isCorrectState = false,
     this.isIncorrectState = false,
     required this.isDisabled,
+    this.fontSize = 15,
     required this.onTap,
   });
 
@@ -105,24 +107,25 @@ class OptionButton extends StatelessWidget {
                       ? MoodleHtmlRenderer(
                           html: htmlText,
                           textStyle: GoogleFonts.nunito(
-                            fontSize: 15,
+                            fontSize: fontSize,
                             fontWeight:
                                 isSelected ? FontWeight.w700 : FontWeight.w500,
                             color: isSelected
                                 ? AppTheme.textPrimary
                                 : AppTheme.textSecondary,
-                            height: 1.4,
+                            height: 1.7,
                           ),
                         )
                       : Text(
                           text,
                           style: GoogleFonts.nunito(
-                            fontSize: 15,
+                            fontSize: fontSize,
                             fontWeight:
                                 isSelected ? FontWeight.w700 : FontWeight.w500,
                             color: isSelected
                                 ? AppTheme.textPrimary
                                 : AppTheme.textSecondary,
+                            height: 1.7,
                           ),
                         ),
                 ),

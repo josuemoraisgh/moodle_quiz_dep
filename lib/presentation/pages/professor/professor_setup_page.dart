@@ -13,7 +13,11 @@ import '../../controllers/auth_controller.dart';
 /// Tela de configuração inicial do professor.
 /// Acessível diretamente da LoginPage mesmo sem senha definida.
 class ProfessorSetupPage extends StatefulWidget {
-  const ProfessorSetupPage({super.key});
+  /// Quando true (vindo do painel do professor), exibe todos os campos
+  /// independentemente de `auth.needs*` e volta ao professor ao salvar.
+  final bool showAllFields;
+
+  const ProfessorSetupPage({super.key, this.showAllFields = false});
 
   @override
   State<ProfessorSetupPage> createState() => _ProfessorSetupPageState();
@@ -88,7 +92,11 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
       if (auth.needsStudents) {
         await auth.saveStudents(_students.map((s) => s.name).toList());
       }
-      if (mounted) context.go(AppRouter.login);
+      if (mounted) {
+        context.go(
+          widget.showAllFields ? AppRouter.professor : AppRouter.login,
+        );
+      }
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -211,11 +219,17 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
                                 icon: const Icon(
                                     Icons.arrow_back_ios_new_rounded,
                                     color: AppTheme.textSecondary),
-                                onPressed: () => context.go(AppRouter.login),
+                                onPressed: () => context.go(
+                                    widget.showAllFields
+                                        ? AppRouter.professor
+                                        : AppRouter.login),
                               ),
                               const SizedBox(width: 8),
-                              const Expanded(
-                                child: Text('Configuração Inicial',
+                              Expanded(
+                                child: Text(
+                                    widget.showAllFields
+                                        ? 'Configurações do Quiz'
+                                        : 'Configuração Inicial',
                                     style: TextStyle(
                                         color: AppTheme.textPrimary,
                                         fontSize: 22,
@@ -227,12 +241,15 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
 
                           Consumer<AuthController>(
                             builder: (context, auth, _) {
-                              final needsTitle = auth.needsQuizTitle;
+                              final force = widget.showAllFields;
+                              final needsTitle =
+                                  force || auth.needsQuizTitle;
                               final needsTeacherPass =
-                                  auth.needsTeacherPassword;
+                                  force || auth.needsTeacherPassword;
                               final needsStudentPass =
-                                  auth.needsStudentPassword;
-                              final needsStudents = auth.needsStudents;
+                                  force || auth.needsStudentPassword;
+                              final needsStudents =
+                                  force || auth.needsStudents;
 
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,

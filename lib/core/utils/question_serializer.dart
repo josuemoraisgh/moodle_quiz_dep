@@ -3,58 +3,123 @@ import 'dart:convert';
 import '../../domain/entities/question_entity.dart';
 import 'moodle_html_parser.dart';
 
-/// Serializa e desserializa [QuestionEntity] para/de JSON (armazenamento SQLite).
+/// Serializa e desserializa [QuestionEntity] para/de um schema canônico v2.
 class QuestionSerializer {
+  static const int _schemaVersion = 2;
+
   static Map<String, dynamic> toJson(QuestionEntity q) {
-    return {
+    final promptHtml = q.htmlText.trim().isNotEmpty
+        ? q.htmlText
+        : '<p>${_escapeHtml(q.text)}</p>';
+
+    final payload = <String, dynamic>{
+      'schema_version': _schemaVersion,
       'slot': q.slot,
       'page': q.page,
-      'text': q.text,
-      'html_text': q.htmlText,
-      'display_html': q.displayHtml,
       'type': q.type,
-      'general_feedback': q.generalFeedback,
-      'right_answer_html': q.rightAnswerHtml,
-      'input_base_name': q.inputBaseName,
-      'seq_check': q.seqCheck,
-      'answer_input_name': q.answerInputName,
-      'image_urls': q.imageUrls,
-      'choices': q.choices.map(_choiceToJson).toList(),
-      'answer_controls': q.answerControls.map(_controlToJson).toList(),
-      'match_data': q.matchData == null ? null : _matchToJson(q.matchData!),
-      'gap_input_data':
-          q.gapInputData == null ? null : _gapToJson(q.gapInputData!),
-      'dd_marker_data':
-          q.ddMarkerData == null ? null : _ddMarkerToJson(q.ddMarkerData!),
+      'prompt': {
+        'text': q.text,
+        'html': promptHtml,
+      },
+      'interaction': {
+        'input_base_name': q.inputBaseName,
+        'seq_check': q.seqCheck,
+      },
+      'feedback': {
+        'general': q.generalFeedback,
+        'right_answer_html': q.rightAnswerHtml,
+      },
+      'media': {
+        'image_urls': q.imageUrls,
+      },
     };
+
+    if (q.answerInputName != null && q.answerInputName!.trim().isNotEmpty) {
+      (payload['interaction'] as Map<String, dynamic>)['answer_input_name'] =
+          q.answerInputName;
+    }
+
+    if (q.choices.isNotEmpty) {
+      payload['choices'] = q.choices.map(_choiceToJson).toList();
+    }
+
+    if (q.answerControls.isNotEmpty) {
+      payload['answer_controls'] =
+          q.answerControls.map(_controlToJson).toList();
+    }
+
+    if (q.matchData != null) {
+      payload['type_data'] = {
+        'match': _matchToJson(q.matchData!),
+      };
+    } else if (q.gapInputData != null) {
+      payload['type_data'] = {
+        'gap': _gapToJson(q.gapInputData!),
+      };
+    } else if (q.ddMarkerData != null) {
+      payload['type_data'] = {
+        'dd_marker': _ddMarkerToJson(q.ddMarkerData!),
+      };
+    }
+
+    return payload;
   }
 
   static QuestionEntity fromJson(Map<String, dynamic> j) {
+    final schemaVersion = j['schema_version'];
+    if (schemaVersion != _schemaVersion) {
+      throw const FormatException(
+        'Unsupported question schema. Expected schema_version=2.',
+      );
+    }
+
+    final prompt = _obj(j['prompt']);
+    final interaction = _obj(j['interaction']);
+    final feedback = _obj(j['feedback']);
+    final media = _obj(j['media']);
+    final typeData = _obj(j['type_data']);
+
+    final text = prompt['text'] as String? ?? '';
+    final htmlText = prompt['html'] as String? ?? '';
+    final displayHtml = prompt['display_html'] as String? ?? htmlText;
+    final type = j['type'] as String? ?? 'multichoice';
+
+    MatchData? matchData;
+    GapInputData? gapInputData;
+    DdMarkerData? ddMarkerData;
+
+    final matchMap = _obj(typeData['match']);
+    if (matchMap.isNotEmpty) {
+      matchData = _matchFromJson(matchMap);
+    }
+    final gapMap = _obj(typeData['gap']);
+    if (gapMap.isNotEmpty) {
+      gapInputData = _gapFromJson(gapMap);
+    }
+    final ddMarkerMap = _obj(typeData['dd_marker']);
+    if (ddMarkerMap.isNotEmpty) {
+      ddMarkerData = _ddMarkerFromJson(ddMarkerMap);
+    }
+
     return QuestionEntity(
       slot: j['slot'] as int? ?? 1,
       page: j['page'] as int? ?? 0,
-      text: j['text'] as String? ?? '',
-      htmlText: j['html_text'] as String? ?? '',
-      displayHtml: j['display_html'] as String? ?? '',
-      type: j['type'] as String? ?? 'multichoice',
-      generalFeedback: j['general_feedback'] as String? ?? '',
-      rightAnswerHtml: j['right_answer_html'] as String? ?? '',
-      inputBaseName: j['input_base_name'] as String? ?? '',
-      seqCheck: j['seq_check'] as String? ?? '',
-      answerInputName: j['answer_input_name'] as String?,
-      imageUrls: _strList(j['image_urls']),
+      text: text,
+      htmlText: htmlText,
+      displayHtml: displayHtml,
+      type: type,
+      generalFeedback: feedback['general'] as String? ?? '',
+      rightAnswerHtml: feedback['right_answer_html'] as String? ?? '',
+      inputBaseName: interaction['input_base_name'] as String? ?? '',
+      seqCheck: interaction['seq_check'] as String? ?? '',
+      answerInputName: interaction['answer_input_name'] as String?,
+      imageUrls: _strList(media['image_urls']),
       choices: _list(j['choices']).map(_choiceFromJson).toList(),
       answerControls:
           _list(j['answer_controls']).map(_controlFromJson).toList(),
-      matchData: j['match_data'] == null
-          ? null
-          : _matchFromJson(j['match_data'] as Map<String, dynamic>),
-      gapInputData: j['gap_input_data'] == null
-          ? null
-          : _gapFromJson(j['gap_input_data'] as Map<String, dynamic>),
-      ddMarkerData: j['dd_marker_data'] == null
-          ? null
-          : _ddMarkerFromJson(j['dd_marker_data'] as Map<String, dynamic>),
+      matchData: matchData,
+      gapInputData: gapInputData,
+      ddMarkerData: ddMarkerData,
     );
   }
 
@@ -192,5 +257,20 @@ class QuestionSerializer {
   static List<String> _strList(Object? raw) {
     if (raw is List) return raw.map((e) => e.toString()).toList();
     return [];
+  }
+
+  static Map<String, dynamic> _obj(Object? raw) {
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+    return const {};
+  }
+
+  static String _escapeHtml(String value) {
+    return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
   }
 }

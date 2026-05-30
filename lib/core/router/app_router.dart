@@ -3,13 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/config/quiz_runtime_config.dart';
-import '../../domain/entities/question_entity.dart';
 import '../../presentation/controllers/auth_controller.dart';
 import '../../presentation/pages/guest/guest_question_page.dart';
 import '../../presentation/pages/login_page.dart';
 import '../../presentation/pages/professor/professor_home_page.dart';
 import '../../presentation/pages/professor/professor_quiz_selection_page.dart';
-import '../../presentation/pages/professor/professor_reveal_page.dart';
 import '../../presentation/pages/professor/professor_setup_page.dart';
 import '../../presentation/pages/professor/ranking_page.dart';
 import '../../presentation/pages/student/student_lobby_page.dart';
@@ -21,7 +19,6 @@ class AppRouter {
   static const String professor = '/professor';
   static const String professorHome = '/professor'; // alias
   static const String professorRank = '/professor/rank';
-  static const String professorReveal = '/professor/reveal';
   static const String studentLobby = '/student/lobby';
   static const String guestQuestion = '/guest/question';
 
@@ -46,9 +43,10 @@ class AppRouter {
           return auth.user!.isTeacher ? professorQuiz : null;
         }
 
-        // Setup só abre quando há parâmetros pendentes de configuração.
+        // Setup: abre quando há configuração pendente OU ?force (professor panel).
         if (loc == professorSetup) {
-          if (auth.requiresSetup) return null;
+          final force = state.uri.queryParameters.containsKey('force');
+          if (force || auth.requiresSetup) return null;
           if (!auth.isLoggedIn) return login;
           return auth.user!.isTeacher ? professorQuiz : studentLobby;
         }
@@ -79,7 +77,10 @@ class AppRouter {
         GoRoute(path: login, builder: (_, __) => const LoginPage()),
         GoRoute(
             path: professorSetup,
-            builder: (_, __) => const ProfessorSetupPage()),
+            builder: (_, state) => ProfessorSetupPage(
+                  showAllFields:
+                      state.uri.queryParameters.containsKey('force'),
+                )),
         GoRoute(
             path: professorQuiz,
             builder: (_, __) => const ProfessorQuizSelectionPage()),
@@ -88,13 +89,6 @@ class AppRouter {
           builder: (_, __) => const ProfessorHomePage(),
           routes: [
             GoRoute(path: 'rank', builder: (_, __) => const RankingPage()),
-            GoRoute(
-                path: 'reveal',
-                builder: (_, state) => ProfessorRevealPage(
-                      question: state.extra is QuestionEntity
-                          ? state.extra as QuestionEntity
-                          : null,
-                    )),
           ],
         ),
         GoRoute(

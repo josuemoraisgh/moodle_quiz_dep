@@ -21,6 +21,10 @@ class QuizRuntimeConfig {
   final int localServerPort;
   final bool startLocalServer;
   final bool singleQuestionByDependency;
+  // true quando o quiz está embedado dentro de um viewer externo (ex: PPTX).
+  // Controles duplicados (fullscreen, login) ficam ocultos na tela guest.
+  final bool embeddedInPresentation;
+  final int slideDisplayIndex; // 1-based; 0 = não definido
 
   const QuizRuntimeConfig({
     this.operationMode = QuizOperationMode.offline,
@@ -39,6 +43,8 @@ class QuizRuntimeConfig {
     this.localServerPort = 8080,
     this.startLocalServer = true,
     this.singleQuestionByDependency = false,
+    this.embeddedInPresentation = false,
+    this.slideDisplayIndex = 0,
   });
 
   factory QuizRuntimeConfig.offline({
@@ -131,6 +137,9 @@ class QuizRuntimeConfig {
           int.tryParse(map['server_port']?.toString() ?? '') ?? 8080,
       startLocalServer: map['start_local_server'] != false,
       singleQuestionByDependency: map['single_question_by_dependency'] == true,
+      embeddedInPresentation: map['embedded_in_presentation'] == true,
+      slideDisplayIndex:
+          int.tryParse(map['slide_display_index']?.toString() ?? '') ?? 0,
     );
   }
 
@@ -148,6 +157,8 @@ class QuizRuntimeConfig {
     int? localServerPort,
     bool? startLocalServer,
     bool? singleQuestionByDependency,
+    bool? embeddedInPresentation,
+    int? slideDisplayIndex,
   }) {
     return QuizRuntimeConfig(
       operationMode: operationMode ?? this.operationMode,
@@ -164,6 +175,9 @@ class QuizRuntimeConfig {
       startLocalServer: startLocalServer ?? this.startLocalServer,
       singleQuestionByDependency:
           singleQuestionByDependency ?? this.singleQuestionByDependency,
+      embeddedInPresentation:
+          embeddedInPresentation ?? this.embeddedInPresentation,
+      slideDisplayIndex: slideDisplayIndex ?? this.slideDisplayIndex,
     );
   }
 

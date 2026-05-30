@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:html/parser.dart' as html_parser;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:html/parser.dart' as html_parser;
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../../core/config/quiz_runtime_config.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/responsive.dart';
@@ -188,18 +189,12 @@ class _MobileLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (prof.isSingleQuestionNavigation) {
-      return Column(
-        children: [
-          _ProfessorAppBar(auth: auth, prof: prof),
-          Expanded(
-            child: _ControlPanel(
-              prof: prof,
-              auth: auth,
-              selectedIndex: questionIndex,
-              onIndexChanged: onIndexChanged,
-            ),
-          ),
-        ],
+      // AppBar é gerenciada internamente por _ControlPanel/_TopControlsColumn
+      return _ControlPanel(
+        prof: prof,
+        auth: auth,
+        selectedIndex: questionIndex,
+        onIndexChanged: onIndexChanged,
       );
     }
     return DefaultTabController(
@@ -245,7 +240,29 @@ class _MobileLayout extends StatelessWidget {
 class _ProfessorAppBar extends StatelessWidget {
   final AuthController auth;
   final ProfessorController prof;
-  const _ProfessorAppBar({required this.auth, required this.prof});
+  final bool showCorrectAnswer;
+  final VoidCallback? onToggleCorrectAnswer;
+  final VoidCallback? onResetQuiz;
+  final bool showFeedback;
+  final bool hasFeedback;
+  final VoidCallback? onToggleFeedback;
+  final bool startTimerOnFirstResponse;
+  final bool isTimerOptionEnabled;
+  final VoidCallback? onToggleStartTimer;
+
+  const _ProfessorAppBar({
+    required this.auth,
+    required this.prof,
+    this.showCorrectAnswer = false,
+    this.onToggleCorrectAnswer,
+    this.onResetQuiz,
+    this.showFeedback = false,
+    this.hasFeedback = false,
+    this.onToggleFeedback,
+    this.startTimerOnFirstResponse = true,
+    this.isTimerOptionEnabled = true,
+    this.onToggleStartTimer,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -253,11 +270,21 @@ class _ProfessorAppBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: AppTheme.textSecondary, size: 20),
-            tooltip: 'Voltar para seleção de questionário',
-            onPressed: () => context.go(AppRouter.professorQuiz),
+          Builder(
+            builder: (ctx) {
+              final isOffline =
+                  ctx.read<QuizRuntimeConfig>().isOffline;
+              return IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                    color: AppTheme.textSecondary, size: 20),
+                tooltip: isOffline
+                    ? 'Configurações do quiz'
+                    : 'Seleção de questionário',
+                onPressed: () => isOffline
+                    ? ctx.go('${AppRouter.professorSetup}?force')
+                    : ctx.go(AppRouter.professorQuiz),
+              );
+            },
           ),
           Container(
             padding: const EdgeInsets.all(8),
@@ -282,19 +309,57 @@ class _ProfessorAppBar extends StatelessWidget {
             ),
           ),
           const FullscreenButton(),
-          IconButton(
-            icon: const Icon(Icons.fact_check_rounded, color: AppTheme.accent),
-            tooltip: 'Mostrar Gabarito',
-            onPressed: prof.questions.isEmpty
-                ? null
-                : () {
-                    final index = prof.selectedQuestionIndex
-                        .clamp(0, prof.questions.length - 1);
-                    final question = prof.questions[index];
-                    prof.setRevealQuestion(question);
-                    context.push(AppRouter.professorReveal, extra: question);
-                  },
-          ),
+          if (onToggleStartTimer != null)
+            Tooltip(
+              message: startTimerOnFirstResponse
+                  ? 'Timer inicia na 1ª resposta\n(toque para desativar)'
+                  : 'Timer inicia imediatamente\n(toque para ativar)',
+              child: IconButton(
+                icon: Icon(
+                  startTimerOnFirstResponse
+                      ? Icons.alarm_rounded
+                      : Icons.alarm_off_rounded,
+                  color: startTimerOnFirstResponse
+                      ? AppTheme.accent
+                      : AppTheme.textSecondary,
+                ),
+                onPressed: isTimerOptionEnabled
+                    ? () => onToggleStartTimer!()
+                    : null,
+              ),
+            ),
+          if (onToggleFeedback != null)
+            IconButton(
+              icon: Icon(
+                showFeedback
+                    ? Icons.visibility_off_rounded
+                    : Icons.feedback_rounded,
+                color: showFeedback ? AppTheme.warning : (hasFeedback ? AppTheme.accent : AppTheme.textSecondary),
+              ),
+              tooltip: showFeedback ? 'Ocultar feedback' : 'Mostrar feedback',
+              onPressed: hasFeedback ? onToggleFeedback : null,
+            ),
+          if (onToggleCorrectAnswer != null)
+            IconButton(
+              icon: Icon(
+                showCorrectAnswer
+                    ? Icons.check_circle_rounded
+                    : Icons.check_circle_outline_rounded,
+                color: showCorrectAnswer
+                    ? AppTheme.success
+                    : AppTheme.textSecondary,
+              ),
+              tooltip: showCorrectAnswer
+                  ? 'Ocultar resposta correta'
+                  : 'Mostrar resposta correta',
+              onPressed: onToggleCorrectAnswer,
+            ),
+          if (onResetQuiz != null)
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded, color: AppTheme.danger),
+              tooltip: 'Reiniciar Quiz',
+              onPressed: onResetQuiz,
+            ),
           IconButton(
             icon: const Icon(Icons.bar_chart_rounded, color: AppTheme.accent),
             tooltip: 'Ver Ranking',
@@ -610,6 +675,13 @@ class _ControlPanelState extends State<_ControlPanel> {
     final selectedQ = hasQuestions && selectedIndex < questions.length
         ? questions[selectedIndex]
         : null;
+    final isSingle = prof.isSingleQuestionNavigation;
+    final runtime = context.read<QuizRuntimeConfig>();
+    final displayIndex = isSingle && runtime.slideDisplayIndex > 0
+        ? runtime.slideDisplayIndex - 1   // converte para 0-based para manter compatibilidade
+        : selectedIndex;
+    final hasFeedback =
+        selectedQ != null && selectedQ.generalFeedback.trim().isNotEmpty;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -621,6 +693,18 @@ class _ControlPanelState extends State<_ControlPanel> {
             auth: auth,
             state: state,
             scores: prof.scores,
+            showCorrectAnswer: _showCorrectAnswer,
+            onToggleCorrectAnswer: isSingle
+                ? () => setState(() => _showCorrectAnswer = !_showCorrectAnswer)
+                : null,
+            onResetQuiz: isSingle
+                ? () => _confirmReset(context, prof)
+                : null,
+            showFeedback: _showFeedback,
+            hasFeedback: hasFeedback,
+            onToggleFeedback: isSingle
+                ? () => setState(() => _showFeedback = !_showFeedback)
+                : null,
           ),
           const SizedBox(height: 16),
 
@@ -628,10 +712,10 @@ class _ControlPanelState extends State<_ControlPanel> {
           if (selectedQ != null) ...[
             _SelectedQuestionCard(
               question: selectedQ,
-              index: selectedIndex,
+              index: displayIndex,
               showCorrect: _showCorrectAnswer,
               showFeedback: _showFeedback,
-              showNavigationArrows: widget.prof.isSingleQuestionNavigation,
+              showNavigationArrows: isSingle,
               onPrevious: selectedIndex > 0
                   ? () => widget.onIndexChanged(selectedIndex - 1)
                   : null,
@@ -640,57 +724,61 @@ class _ControlPanelState extends State<_ControlPanel> {
                   : null,
             ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: Checkbox(
-                    value: _showCorrectAnswer,
-                    onChanged: (v) =>
-                        setState(() => _showCorrectAnswer = v ?? false),
-                    activeColor: AppTheme.success,
-                    side: const BorderSide(color: AppTheme.textSecondary),
+            if (!isSingle)
+              Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: Checkbox(
+                      value: _showCorrectAnswer,
+                      onChanged: (v) =>
+                          setState(() => _showCorrectAnswer = v ?? false),
+                      activeColor: AppTheme.success,
+                      side: const BorderSide(color: AppTheme.textSecondary),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () =>
-                      setState(() => _showCorrectAnswer = !_showCorrectAnswer),
-                  child: const Text(
-                    'Mostrar resposta correta',
-                    style:
-                        TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => setState(
+                        () => _showCorrectAnswer = !_showCorrectAnswer),
+                    child: const Text(
+                      'Mostrar resposta correta',
+                      style: TextStyle(
+                          color: AppTheme.textSecondary, fontSize: 12),
+                    ),
                   ),
-                ),
-                const Spacer(),
-                OutlinedButton.icon(
-                  onPressed: selectedQ.generalFeedback.trim().isEmpty
-                      ? null
-                      : () => setState(() => _showFeedback = !_showFeedback),
-                  icon: Icon(
-                    _showFeedback
-                        ? Icons.visibility_off_rounded
-                        : Icons.feedback_rounded,
-                    size: 16,
-                  ),
-                  label: Text(_showFeedback ? 'Ocultar feedback' : 'Feedback'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _showFeedback
-                        ? AppTheme.warning
-                        : AppTheme.textSecondary,
-                    side: BorderSide(
-                      color: _showFeedback
+                  const Spacer(),
+                  OutlinedButton.icon(
+                    onPressed: selectedQ.generalFeedback.trim().isEmpty
+                        ? null
+                        : () =>
+                            setState(() => _showFeedback = !_showFeedback),
+                    icon: Icon(
+                      _showFeedback
+                          ? Icons.visibility_off_rounded
+                          : Icons.feedback_rounded,
+                      size: 16,
+                    ),
+                    label: Text(
+                        _showFeedback ? 'Ocultar feedback' : 'Feedback'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _showFeedback
                           ? AppTheme.warning
                           : AppTheme.textSecondary,
+                      side: BorderSide(
+                        color: _showFeedback
+                            ? AppTheme.warning
+                            : AppTheme.textSecondary,
+                      ),
+                      minimumSize: const Size(0, 34),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 12),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    minimumSize: const Size(0, 34),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
             const SizedBox(height: 16),
           ],
 
@@ -718,27 +806,29 @@ class _ControlPanelState extends State<_ControlPanel> {
 
           const SizedBox(height: 12),
 
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: prof.isLoading
-                      ? null
-                      : () => _confirmReset(context, prof),
-                  icon: const Icon(Icons.refresh_rounded,
-                      color: AppTheme.danger, size: 18),
-                  label: const Text('Reiniciar Quiz',
-                      style: TextStyle(color: AppTheme.danger)),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppTheme.danger),
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+          // Reiniciar Quiz — apenas no modo lista (no single fica na AppBar)
+          if (!isSingle)
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: prof.isLoading
+                        ? null
+                        : () => _confirmReset(context, prof),
+                    icon: const Icon(Icons.refresh_rounded,
+                        color: AppTheme.danger, size: 18),
+                    label: const Text('Reiniciar Quiz',
+                        style: TextStyle(color: AppTheme.danger)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppTheme.danger),
+                      minimumSize: const Size(double.infinity, 44),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
           const SizedBox(height: 12),
 
@@ -754,14 +844,9 @@ class _ControlPanelState extends State<_ControlPanel> {
                     Border.all(color: AppTheme.danger.withValues(alpha: 0.4)),
               ),
               child: Text(prof.error!,
-                  style: const TextStyle(color: AppTheme.danger, fontSize: 13)),
+                  style:
+                      const TextStyle(color: AppTheme.danger, fontSize: 13)),
             ),
-          ],
-
-          // ── Log de carregamento — toggle com botão ──
-          if (prof.log.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _CollapsibleLogPanel(log: prof.log),
           ],
         ],
       ),
@@ -803,12 +888,24 @@ class _ProfessorTopSection extends StatelessWidget {
   final AuthController auth;
   final QuizStateEntity state;
   final List<dynamic> scores;
+  final bool showCorrectAnswer;
+  final VoidCallback? onToggleCorrectAnswer;
+  final VoidCallback? onResetQuiz;
+  final bool showFeedback;
+  final bool hasFeedback;
+  final VoidCallback? onToggleFeedback;
 
   const _ProfessorTopSection({
     required this.prof,
     required this.auth,
     required this.state,
     required this.scores,
+    this.showCorrectAnswer = false,
+    this.onToggleCorrectAnswer,
+    this.onResetQuiz,
+    this.showFeedback = false,
+    this.hasFeedback = false,
+    this.onToggleFeedback,
   });
 
   @override
@@ -818,12 +915,20 @@ class _ProfessorTopSection extends StatelessWidget {
       auth: auth,
       state: state,
       scores: scores,
+      showCorrectAnswer: showCorrectAnswer,
+      onToggleCorrectAnswer: onToggleCorrectAnswer,
+      onResetQuiz: onResetQuiz,
+      showFeedback: showFeedback,
+      hasFeedback: hasFeedback,
+      onToggleFeedback: onToggleFeedback,
     );
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide =
             Responsive.isDesktop(context) && constraints.maxWidth >= 760;
+        // QR menor — dá mais espaço para os controles
+        final qrFlex = prof.isSingleQuestionNavigation ? 7 : 4;
 
         if (!isWide) {
           return Column(
@@ -839,7 +944,7 @@ class _ProfessorTopSection extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Expanded(flex: 7, child: _CompactQrCard()),
+            Expanded(flex: qrFlex, child: const _CompactQrCard()),
             const SizedBox(width: 16),
             Expanded(flex: 22, child: controls),
           ],
@@ -854,21 +959,49 @@ class _TopControlsColumn extends StatelessWidget {
   final AuthController auth;
   final QuizStateEntity state;
   final List<dynamic> scores;
+  final bool showCorrectAnswer;
+  final VoidCallback? onToggleCorrectAnswer;
+  final VoidCallback? onResetQuiz;
+  final bool showFeedback;
+  final bool hasFeedback;
+  final VoidCallback? onToggleFeedback;
 
   const _TopControlsColumn({
     required this.prof,
     required this.auth,
     required this.state,
     required this.scores,
+    this.showCorrectAnswer = false,
+    this.onToggleCorrectAnswer,
+    this.onResetQuiz,
+    this.showFeedback = false,
+    this.hasFeedback = false,
+    this.onToggleFeedback,
   });
 
   @override
   Widget build(BuildContext context) {
+    final showAppBar = Responsive.isDesktop(context) ||
+        prof.isSingleQuestionNavigation;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (Responsive.isDesktop(context))
-          _ProfessorAppBar(auth: auth, prof: prof),
+        if (showAppBar) const SizedBox(height: 32),
+        if (showAppBar)
+          _ProfessorAppBar(
+            auth: auth,
+            prof: prof,
+            showCorrectAnswer: showCorrectAnswer,
+            onToggleCorrectAnswer: onToggleCorrectAnswer,
+            onResetQuiz: onResetQuiz,
+            showFeedback: showFeedback,
+            hasFeedback: hasFeedback,
+            onToggleFeedback: onToggleFeedback,
+            startTimerOnFirstResponse: prof.startTimerOnFirstResponse,
+            isTimerOptionEnabled: !state.isActive,
+            onToggleStartTimer: () =>
+                prof.setStartTimerOnFirstResponse(!prof.startTimerOnFirstResponse),
+          ),
         _StatusCard(state: state),
         const SizedBox(height: 16),
         if (state.isActive && state.isTimerPending) ...[
@@ -919,12 +1052,6 @@ class _TopControlsColumn extends StatelessWidget {
           onChange: prof.setDuration,
           enabled: !state.isActive,
         ),
-        const SizedBox(height: 12),
-        _StartTimerOption(
-          value: prof.startTimerOnFirstResponse,
-          enabled: !state.isActive,
-          onChanged: prof.setStartTimerOnFirstResponse,
-        ),
         if (scores.isNotEmpty) ...[
           const SizedBox(height: 16),
           _MiniRanking(scores: scores),
@@ -951,30 +1078,39 @@ class _QrBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: QrImageView(
-            data: url,
-            version: QrVersions.auto,
-            size: 100,
-            gapless: true,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          url,
-          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10),
-          textAlign: TextAlign.center,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final qrSize = (constraints.maxWidth.isFinite
+                ? constraints.maxWidth
+                : 160.0)
+            .clamp(80.0, 260.0);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: QrImageView(
+                data: url,
+                version: QrVersions.auto,
+                size: qrSize - 16,
+                gapless: true,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              url,
+              style: const TextStyle(
+                  color: AppTheme.textSecondary, fontSize: 10),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -1124,115 +1260,84 @@ class _SelectedQuestionCard extends StatefulWidget {
 }
 
 class _SelectedQuestionCardState extends State<_SelectedQuestionCard> {
-  bool _expanded = false;
   final Map<String, String> _selectedAnswers = {};
 
   @override
   Widget build(BuildContext context) {
     final question = widget.question;
-    final previewText = _questionPreviewText(question);
+    final hasLeft = widget.showNavigationArrows && widget.onPrevious != null;
+    final hasRight = widget.showNavigationArrows && widget.onNext != null;
+    final leftPad = hasLeft ? 52.0 : 16.0;
+    final rightPad = hasRight ? 52.0 : 16.0;
+    final plainTitle = _questionPreviewText(question);
 
     return Stack(
       alignment: Alignment.center,
       children: [
         Container(
-          padding: const EdgeInsets.fromLTRB(52, 16, 52, 16),
+          padding: EdgeInsets.fromLTRB(leftPad, 12, rightPad, 12),
           decoration: AppTheme.cardDecoration(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text('Questão ${widget.index + 1}',
-                        style: const TextStyle(
-                            color: AppTheme.accent,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700)),
-                  ),
-                  IconButton(
-                    onPressed: () => setState(() => _expanded = !_expanded),
-                    tooltip:
-                        _expanded ? 'Recolher enunciado' : 'Expandir enunciado',
-                    icon: Icon(
-                      _expanded
-                          ? Icons.keyboard_arrow_up_rounded
-                          : Icons.keyboard_arrow_down_rounded,
-                      color: AppTheme.textSecondary,
+              // Título: "Questão X — enunciado" (sem duplicar no corpo)
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Questão ${widget.question.slot}',
+                      style: const TextStyle(
+                        color: AppTheme.accent,
+                        fontSize: 25,
+                        fontWeight: FontWeight.w700,
+                        height: 1.6,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              GestureDetector(
-                onTap: () => setState(() => _expanded = !_expanded),
-                child: AnimatedCrossFade(
-                  firstChild: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        previewText,
+                    if (plainTitle.isNotEmpty)
+                      TextSpan(
+                        text: ' — $plainTitle',
                         style: const TextStyle(
                           color: AppTheme.textPrimary,
-                          fontSize: 14,
+                          fontSize: 25,
                           fontWeight: FontWeight.w600,
-                          height: 1.4,
+                          height: 1.6,
                         ),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                  secondChild: widget.showFeedback
-                      ? _QuestionFeedbackView(question: question)
-                      : QuestionEngineWidget(
-                          question: question,
-                          mode: QuestionEngineMode.preview,
-                          showCorrect: widget.showCorrect,
-                          compact: true,
-                          selectedAnswers: _selectedAnswers,
-                          onSelectAnswer: (name, value) =>
-                              setState(() => _selectedAnswers[name] = value),
-                        ),
-                  crossFadeState: _expanded
-                      ? CrossFadeState.showSecond
-                      : CrossFadeState.showFirst,
-                  duration: const Duration(milliseconds: 180),
+                  ],
                 ),
               ),
-              TextButton.icon(
-                onPressed: () => setState(() => _expanded = !_expanded),
-                icon: Icon(
-                  _expanded
-                      ? Icons.unfold_less_rounded
-                      : Icons.unfold_more_rounded,
-                  size: 18,
-                ),
-                label: Text(_expanded ? 'Recolher' : 'Expandir'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.textSecondary,
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(0, 32),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
+              const SizedBox(height: 8),
+              widget.showFeedback
+                  ? _QuestionFeedbackView(question: question)
+                  : QuestionEngineWidget(
+                      question: question,
+                      mode: QuestionEngineMode.preview,
+                      showCorrect: widget.showCorrect,
+                      showTypeHeader: false,
+                      showPrompt: false,
+                      compact: true,
+                      baseFontSize: 25,
+                      selectedAnswers: _selectedAnswers,
+                      onSelectAnswer: (name, value) =>
+                          setState(() => _selectedAnswers[name] = value),
+                    ),
             ],
           ),
         ),
-        if (widget.showNavigationArrows) ...[
+        if (hasLeft)
           _QuestionNavArrow(
             alignment: Alignment.centerLeft,
             icon: Icons.chevron_left_rounded,
             tooltip: 'Questão anterior',
             onPressed: widget.onPrevious,
           ),
+        if (hasRight)
           _QuestionNavArrow(
             alignment: Alignment.centerRight,
             icon: Icons.chevron_right_rounded,
             tooltip: 'Próxima questão',
             onPressed: widget.onNext,
           ),
-        ],
       ],
     );
   }
@@ -1242,9 +1347,7 @@ class _SelectedQuestionCardState extends State<_SelectedQuestionCard> {
       final parsed = html_parser.parse(question.htmlText);
       final text = parsed.documentElement?.text ?? '';
       final normalized = text.replaceAll(RegExp(r'\s+'), ' ').trim();
-      if (normalized.isNotEmpty) {
-        return normalized;
-      }
+      if (normalized.isNotEmpty) return normalized;
     }
     return question.text.trim();
   }
@@ -1333,67 +1436,6 @@ class _QuestionNavArrow extends StatelessWidget {
   }
 }
 
-class _StartTimerOption extends StatelessWidget {
-  final bool value;
-  final bool enabled;
-  final ValueChanged<bool> onChanged;
-
-  const _StartTimerOption({
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: enabled ? () => onChanged(!value) : null,
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 20,
-              height: 20,
-              child: Checkbox(
-                value: value,
-                onChanged: enabled ? (next) => onChanged(next ?? true) : null,
-                side: const BorderSide(color: AppTheme.textSecondary),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Começar tempo na 1ª resposta',
-                    style: TextStyle(
-                      color: enabled
-                          ? AppTheme.textPrimary
-                          : AppTheme.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'Marcado por padrão. A questão abre na hora, mas o cronômetro só inicia quando o primeiro aluno responder.',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _ActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -1425,111 +1467,6 @@ class _ActionButton extends StatelessWidget {
         backgroundColor: color,
         minimumSize: const Size(double.infinity, 52),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-}
-
-class _CollapsibleLogPanel extends StatefulWidget {
-  final List<String> log;
-  const _CollapsibleLogPanel({required this.log});
-
-  @override
-  State<_CollapsibleLogPanel> createState() => _CollapsibleLogPanelState();
-}
-
-class _CollapsibleLogPanelState extends State<_CollapsibleLogPanel> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: () => setState(() => _expanded = !_expanded),
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppTheme.bgDark,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppTheme.bgCard),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.terminal_rounded,
-                    color: AppTheme.accent, size: 14),
-                const SizedBox(width: 6),
-                const Expanded(
-                  child: Text('Log de carregamento/diagnóstico',
-                      style: TextStyle(
-                          color: AppTheme.accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700)),
-                ),
-                if (_expanded)
-                  IconButton(
-                    icon: const Icon(Icons.copy_rounded, size: 14),
-                    color: AppTheme.textSecondary,
-                    tooltip: 'Copiar log',
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints(minWidth: 28, minHeight: 28),
-                    onPressed: () {
-                      Clipboard.setData(
-                          ClipboardData(text: widget.log.join('\n')));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Log copiado!'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                  ),
-                const SizedBox(width: 4),
-                Text(
-                  '${widget.log.length} linhas',
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 11),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  _expanded ? Icons.expand_less : Icons.expand_more,
-                  color: AppTheme.accent,
-                  size: 20,
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (_expanded) SizedBox(height: 220, child: _LogPanel(log: widget.log)),
-      ],
-    );
-  }
-}
-
-class _LogPanel extends StatelessWidget {
-  final List<String> log;
-  const _LogPanel({required this.log});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 4),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.bgDark,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.bgCard),
-      ),
-      child: SingleChildScrollView(
-        child: SelectableText(
-          log.join('\n'),
-          style: const TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 11,
-              fontFamily: 'monospace'),
-        ),
       ),
     );
   }

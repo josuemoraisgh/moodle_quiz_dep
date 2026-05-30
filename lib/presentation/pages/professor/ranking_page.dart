@@ -24,6 +24,7 @@ class RankingPage extends StatelessWidget {
             child: SafeArea(
               child: Column(
                 children: [
+                  const SizedBox(height: 32),
                   _RankingAppBar(
                       title: prof.quizState.quizTitle,
                       questionNum: prof.quizState.currentPage >= 0
