@@ -65,11 +65,11 @@ class _ProfessorQuizSelectionPageState
 
     final payload = await showDialog<(String, String, String)>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppTheme.bgCard,
-        title: const Text(
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ctx.appColors.bgCard,
+        title: Text(
           'Importar XML Moodle',
-          style: TextStyle(color: AppTheme.textPrimary),
+          style: TextStyle(color: ctx.appColors.textPrimary),
         ),
         content: SizedBox(
           width: 560,
@@ -78,13 +78,13 @@ class _ProfessorQuizSelectionPageState
             children: [
               TextField(
                 controller: nameCtrl,
-                style: const TextStyle(color: AppTheme.textPrimary),
+                style: TextStyle(color: ctx.appColors.textPrimary),
                 decoration: const InputDecoration(labelText: 'Nome do arquivo'),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: pathCtrl,
-                style: const TextStyle(color: AppTheme.textPrimary),
+                style: TextStyle(color: ctx.appColors.textPrimary),
                 decoration: const InputDecoration(
                   labelText: 'Caminho do arquivo (opcional no desktop)',
                   hintText: 'Ex.: C:/quizzes/prova.xml',
@@ -95,7 +95,7 @@ class _ProfessorQuizSelectionPageState
                 controller: xmlCtrl,
                 minLines: 10,
                 maxLines: 20,
-                style: const TextStyle(color: AppTheme.textPrimary),
+                style: TextStyle(color: ctx.appColors.textPrimary),
                 decoration: const InputDecoration(
                   labelText: 'Conteudo XML',
                   hintText: 'Cole aqui o XML exportado do Moodle',
@@ -162,12 +162,12 @@ class _ProfessorQuizSelectionPageState
       ProfessorController prof, LocalQuizEntity quiz) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppTheme.bgCard,
-        title: const Text('Excluir Quiz',
-            style: TextStyle(color: AppTheme.textPrimary)),
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ctx.appColors.bgCard,
+        title: Text('Excluir Quiz',
+            style: TextStyle(color: ctx.appColors.textPrimary)),
         content: Text('Excluir "${quiz.name}"?',
-            style: const TextStyle(color: AppTheme.textSecondary)),
+            style: TextStyle(color: ctx.appColors.textSecondary)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -191,7 +191,7 @@ class _ProfessorQuizSelectionPageState
             prof.supportsImport && !runtime.singleQuestionByDependency;
         return Scaffold(
           body: Container(
-            decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+            decoration: BoxDecoration(gradient: context.appColors.bgGradient),
             child: SafeArea(
               child: Center(
                 child: ConstrainedBox(
@@ -229,7 +229,7 @@ class _ProfessorQuizSelectionPageState
                                   color: AppTheme.textSecondary),
                               tooltip: 'Configurações',
                               onPressed: () =>
-                                  context.go(AppRouter.professorSetup),
+                                  context.push(AppRouter.professorSetup),
                             ),
                             IconButton(
                               icon: const Icon(Icons.logout,
@@ -356,7 +356,7 @@ class _QuizCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: AppTheme.cardDecoration(),
+      decoration: context.appColors.cardDecoration(),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
@@ -369,11 +369,13 @@ class _QuizCard extends StatelessWidget {
           child: const Icon(Icons.quiz_rounded, color: Colors.white, size: 22),
         ),
         title: Text(quiz.name,
-            style: const TextStyle(
-                color: AppTheme.textPrimary, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+                color: context.appColors.textPrimary,
+                fontWeight: FontWeight.w700)),
         subtitle: Text(
           '${quiz.totalQuestions} questão(ões)',
-          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          style: TextStyle(
+              color: context.appColors.textSecondary, fontSize: 12),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

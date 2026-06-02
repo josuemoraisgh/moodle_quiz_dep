@@ -34,7 +34,6 @@ class _TimerWidgetState extends State<TimerWidget> {
     _seconds = diff < 0 ? 0 : diff;
     if (_seconds == 0 && !_timeUpCalled && widget.onTimeUp != null) {
       _timeUpCalled = true;
-      // Chamar no próximo frame para evitar setState durante build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.onTimeUp?.call();
       });
@@ -49,6 +48,7 @@ class _TimerWidgetState extends State<TimerWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final pct = _total > 0 ? _seconds / _total : 0.0;
     final Color timerColor = _seconds > 10
         ? AppTheme.success
@@ -58,13 +58,11 @@ class _TimerWidgetState extends State<TimerWidget> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: AppTheme.cardDecoration(),
+      decoration: colors.cardDecoration(),
       child: Row(
         children: [
-          // ── Ícone ────────────────────────────────────────────────────
           Icon(Icons.timer_rounded, color: timerColor, size: 22),
           const SizedBox(width: 10),
-          // ── Número ───────────────────────────────────────────────────
           Text(
             '$_seconds',
             style: GoogleFonts.poppins(
@@ -74,16 +72,16 @@ class _TimerWidgetState extends State<TimerWidget> {
             ),
           ),
           const SizedBox(width: 4),
-          const Text('s',
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
+          Text('s',
+              style:
+                  TextStyle(color: colors.textSecondary, fontSize: 14)),
           const SizedBox(width: 12),
-          // ── Barra de progresso ────────────────────────────────────────
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: pct.clamp(0.0, 1.0),
-                backgroundColor: AppTheme.bgCardAlt,
+                backgroundColor: colors.bgCardAlt,
                 valueColor: AlwaysStoppedAnimation<Color>(timerColor),
                 minHeight: 8,
               ),

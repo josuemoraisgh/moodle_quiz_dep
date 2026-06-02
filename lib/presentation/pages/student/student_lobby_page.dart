@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/quiz_nav_notifier.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../domain/entities/quiz_state_entity.dart';
 import '../../controllers/auth_controller.dart';
@@ -21,15 +22,31 @@ class StudentLobbyPage extends StatefulWidget {
 }
 
 class _StudentLobbyPageState extends State<StudentLobbyPage> {
+  VoidCallback? _activeLogoutCb;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = context.read<AuthController>().user;
-      if (user != null) {
-        context.read<StudentController>().initLocal(user);
+      if (!mounted) return;
+      final auth = context.read<AuthController>();
+      if (auth.user != null) {
+        context.read<StudentController>().initLocal(auth.user!);
       }
+      // Expõe callback de logout para a barra externa da apresentação.
+      _activeLogoutCb = () async {
+        await auth.logout();
+      };
+      quizLogoutNotifier.value = _activeLogoutCb;
     });
+  }
+
+  @override
+  void dispose() {
+    if (quizLogoutNotifier.value == _activeLogoutCb) {
+      quizLogoutNotifier.value = null;
+    }
+    super.dispose();
   }
 
   @override
@@ -39,7 +56,7 @@ class _StudentLobbyPageState extends State<StudentLobbyPage> {
         final state = student.quizState;
         return Scaffold(
           body: Container(
-            decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+            decoration: BoxDecoration(gradient: context.appColors.bgGradient),
             child: SafeArea(
               child: Column(
                 children: [
@@ -90,13 +107,13 @@ class _StudentAppBar extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(name,
-                style: const TextStyle(
-                    color: AppTheme.textPrimary,
+                style: TextStyle(
+                    color: context.appColors.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w700)),
           ),
           IconButton(
-            icon: const Icon(Icons.logout, color: AppTheme.textSecondary),
+            icon: Icon(Icons.logout, color: context.appColors.textSecondary),
             tooltip: 'Sair',
             onPressed: () async {
               await auth.logout();
@@ -138,13 +155,14 @@ class _WaitingView extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               title.isNotEmpty ? title : 'Quiz Presencial',
-              style: AppTheme.headlineLarge,
+              style: AppTheme.headlineLarge(context),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Aguarde o professor liberar a próxima questão…',
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 15),
+              style: TextStyle(
+                  color: context.appColors.textSecondary, fontSize: 15),
               textAlign: TextAlign.center,
             ),
           ],
@@ -165,14 +183,15 @@ class _QuestionView extends StatelessWidget {
   Widget build(BuildContext context) {
     final q = student.currentQuestion;
     if (q == null) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
             Text('Carregando questão…',
-                style: TextStyle(color: AppTheme.textSecondary)),
+                style:
+                    TextStyle(color: context.appColors.textSecondary)),
           ],
         ),
       );
@@ -324,7 +343,8 @@ class _FeedbackCard extends StatelessWidget {
                 if (subtitle != null)
                   Text(subtitle,
                       style: const TextStyle(
-                          color: AppTheme.textSecondary, fontSize: 13)),
+                          color: AppTheme.textSecondary,
+                          fontSize: 13)),
               ],
             ),
           ),
@@ -352,10 +372,12 @@ class _FinishedView extends StatelessWidget {
               color: AppTheme.gold, size: 72),
           const SizedBox(height: 16),
           Text('Quiz Finalizado!',
-              style: AppTheme.headlineLarge.copyWith(color: AppTheme.gold)),
+              style: AppTheme.headlineLarge(context)
+                  .copyWith(color: AppTheme.gold)),
           const SizedBox(height: 8),
-          const Text('Obrigado por participar!',
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 15)),
+          Text('Obrigado por participar!',
+              style: TextStyle(
+                  color: context.appColors.textSecondary, fontSize: 15)),
         ],
       )
           .animate()

@@ -93,9 +93,12 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
         await auth.saveStudents(_students.map((s) => s.name).toList());
       }
       if (mounted) {
-        context.go(
-          widget.showAllFields ? AppRouter.professor : AppRouter.login,
-        );
+        if (widget.showAllFields) {
+          if (context.canPop()) { context.pop(); }
+          else { context.go(AppRouter.professor); }
+        } else {
+          context.go(AppRouter.login);
+        }
       }
     } catch (e) {
       setState(() => _error = e.toString());
@@ -122,11 +125,11 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
     final controller = TextEditingController();
     final raw = await showDialog<String>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppTheme.bgCard,
-        title: const Text(
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ctx.appColors.bgCard,
+        title: Text(
           'Importar alunos',
-          style: TextStyle(color: AppTheme.textPrimary),
+          style: TextStyle(color: ctx.appColors.textPrimary),
         ),
         content: TextField(
           controller: controller,
@@ -198,7 +201,7 @@ class _ProfessorSetupPageState extends State<ProfessorSetupPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+        decoration: BoxDecoration(gradient: context.appColors.bgGradient),
         child: SafeArea(
           child: !_loaded
               ? const Center(child: CircularProgressIndicator())
@@ -486,7 +489,7 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: AppTheme.cardDecoration(),
+      decoration: context.appColors.cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

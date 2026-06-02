@@ -38,6 +38,7 @@ class OptionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final labelColor = _labelColors[label] ?? AppTheme.primary;
     final stateColor = isCorrectState
         ? AppTheme.success
@@ -51,7 +52,7 @@ class OptionButton extends StatelessWidget {
             ? Colors.redAccent.withValues(alpha: 0.14)
             : (isSelected
                 ? labelColor.withValues(alpha: 0.18)
-                : AppTheme.bgCard));
+                : colors.bgCard));
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -83,7 +84,7 @@ class OptionButton extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: isSelected ? labelColor : AppTheme.bgCardAlt,
+                    color: isSelected ? labelColor : colors.bgCardAlt,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
@@ -111,8 +112,8 @@ class OptionButton extends StatelessWidget {
                             fontWeight:
                                 isSelected ? FontWeight.w700 : FontWeight.w500,
                             color: isSelected
-                                ? AppTheme.textPrimary
-                                : AppTheme.textSecondary,
+                                ? colors.textPrimary
+                                : colors.textSecondary,
                             height: 1.7,
                           ),
                         )
@@ -123,8 +124,8 @@ class OptionButton extends StatelessWidget {
                             fontWeight:
                                 isSelected ? FontWeight.w700 : FontWeight.w500,
                             color: isSelected
-                                ? AppTheme.textPrimary
-                                : AppTheme.textSecondary,
+                                ? colors.textPrimary
+                                : colors.textSecondary,
                             height: 1.7,
                           ),
                         ),

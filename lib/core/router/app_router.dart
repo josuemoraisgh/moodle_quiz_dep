@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/config/quiz_runtime_config.dart';
 import '../../presentation/controllers/auth_controller.dart';
 import '../../presentation/pages/guest/guest_question_page.dart';
 import '../../presentation/pages/login_page.dart';
@@ -23,27 +22,20 @@ class AppRouter {
   static const String guestQuestion = '/guest/question';
 
   static GoRouter build(BuildContext context) {
-    final runtime = context.read<QuizRuntimeConfig>();
     return GoRouter(
-      initialLocation:
-          runtime.singleQuestionByDependency ? guestQuestion : login,
+      initialLocation: login,
       redirect: (context, state) {
         final auth = context.read<AuthController>();
-        final runtime = context.read<QuizRuntimeConfig>();
         final loc = state.matchedLocation;
 
         // ── /guest/question ──────────────────────────────────────────────────
         if (loc == guestQuestion) {
-          if (!runtime.singleQuestionByDependency) {
-            // Modo standalone: redireciona conforme perfil
-            if (!auth.isLoggedIn) return login;
-            if (auth.user!.isTeacher) return professorQuiz;
-            if (auth.user!.isGuest) return null; // convidado vê read-only
-            return studentLobby;
-          }
-          // Modo dependência: professor vai para gestão; aluno/convidado ficam.
-          if (!auth.isLoggedIn) return null;
-          return auth.user!.isTeacher ? professorQuiz : null;
+          if (!auth.isLoggedIn) return login;
+          if (auth.user!.isTeacher) return professorQuiz;
+          // Somente convidado fica em guestQuestion (leitura dos slides).
+          // Aluno vai sempre para o lobby: espera → questão → resultado.
+          if (auth.user!.isGuest) return null;
+          return studentLobby;
         }
 
         // ── /professor/setup ─────────────────────────────────────────────────
@@ -61,11 +53,8 @@ class AppRouter {
         if (auth.isLoggedIn) {
           final user = auth.user!;
 
-          // Convidado só pode ficar em guestQuestion ou login
-          if (user.isGuest) {
-            if (loc != login && loc != guestQuestion) return guestQuestion;
-            return null;
-          }
+          // Convidado vai sempre para guestQuestion — nunca fica no login.
+          if (user.isGuest && loc != guestQuestion) return guestQuestion;
 
           // Na tela de login → vai para dashboard adequado
           if (loc == login) {

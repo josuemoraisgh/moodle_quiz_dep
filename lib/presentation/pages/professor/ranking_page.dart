@@ -20,7 +20,7 @@ class RankingPage extends StatelessWidget {
 
         return Scaffold(
           body: Container(
-            decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+            decoration: BoxDecoration(gradient: context.appColors.bgGradient),
             child: SafeArea(
               child: Column(
                 children: [
@@ -66,12 +66,11 @@ class _RankingAppBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: AppTheme.textSecondary),
+            icon: Icon(Icons.arrow_back_ios_new_rounded,
+                color: context.appColors.textSecondary),
             onPressed: () => Navigator.of(context).pop(),
           ),
           const SizedBox(width: 4),
-          // Trofeu animado
           const Icon(Icons.emoji_events_rounded, color: AppTheme.gold, size: 28)
               .animate(onPlay: (c) => c.repeat(reverse: true))
               .shimmer(duration: 2000.ms, color: Colors.white),
@@ -85,14 +84,14 @@ class _RankingAppBar extends StatelessWidget {
                   style: GoogleFonts.nunito(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    color: AppTheme.textPrimary,
+                    color: context.appColors.textPrimary,
                   ),
                 ),
                 if (questionNum > 0)
                   Text(
                     'Após questão $questionNum${total > 0 ? ' de $total' : ''}',
-                    style: const TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 12),
+                    style: TextStyle(
+                        color: context.appColors.textSecondary, fontSize: 12),
                   ),
               ],
             ),
@@ -123,7 +122,7 @@ class _StatBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: AppTheme.cardDecoration(),
+      decoration: context.appColors.cardDecoration(),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -137,10 +136,10 @@ class _StatBadge extends StatelessWidget {
                   style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
-                      color: AppTheme.textPrimary)),
+                      color: context.appColors.textPrimary)),
               Text(label,
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 10)),
+                  style: TextStyle(
+                      color: context.appColors.textSecondary, fontSize: 10)),
             ],
           ),
         ],
@@ -387,7 +386,7 @@ class _PodiumColumn extends StatelessWidget {
             style: GoogleFonts.nunito(
               fontSize: 13,
               fontWeight: FontWeight.w800,
-              color: AppTheme.textPrimary,
+              color: context.appColors.textPrimary,
             ),
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -409,7 +408,7 @@ class _PodiumColumn extends StatelessWidget {
           // Acertos
           Text(
             '${player!.correctCount}/${player!.totalAnswered} ✓',
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+            style: TextStyle(color: context.appColors.textSecondary, fontSize: 11),
           ).animate(delay: delay + 250.ms).fadeIn(),
         ] else
           SizedBox(height: isCrown ? 90 : 70),
@@ -475,9 +474,10 @@ class _ScoreList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (scores.isEmpty) {
-      return const Center(
+      return Center(
         child: Text('Apenas os 3 primeiros!',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
+            style: TextStyle(
+                color: context.appColors.textSecondary, fontSize: 14)),
       );
     }
 
@@ -517,7 +517,7 @@ class _ScoreRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: AppTheme.cardDecoration(),
+      decoration: context.appColors.cardDecoration(),
       child: Row(
         children: [
           // Rank badge
@@ -525,7 +525,7 @@ class _ScoreRow extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: AppTheme.bgCardAlt,
+              color: context.appColors.bgCardAlt,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -534,7 +534,7 @@ class _ScoreRow extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
-                  color: AppTheme.textSecondary,
+                  color: context.appColors.textSecondary,
                 ),
               ),
             ),
@@ -572,7 +572,7 @@ class _ScoreRow extends StatelessWidget {
                   style: GoogleFonts.nunito(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
+                    color: context.appColors.textPrimary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -589,9 +589,9 @@ class _ScoreRow extends StatelessWidget {
                                   ? score.correctCount / score.totalAnswered
                                   : 0),
                           duration: const Duration(milliseconds: 800),
-                          builder: (_, val, __) => LinearProgressIndicator(
+                          builder: (context, val, __) => LinearProgressIndicator(
                             value: val,
-                            backgroundColor: AppTheme.bgCardAlt,
+                            backgroundColor: context.appColors.bgCardAlt,
                             valueColor: AlwaysStoppedAnimation<Color>(barColor),
                             minHeight: 5,
                           ),
@@ -601,8 +601,8 @@ class _ScoreRow extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       '${score.correctCount}/${score.totalAnswered}',
-                      style: const TextStyle(
-                          color: AppTheme.textSecondary, fontSize: 11),
+                      style: TextStyle(
+                          color: context.appColors.textSecondary, fontSize: 11),
                     ),
                   ],
                 ),
@@ -628,9 +628,9 @@ class _ScoreRow extends StatelessWidget {
                   ),
                 ),
               ),
-              const Text('pts',
+              Text('pts',
                   style:
-                      TextStyle(color: AppTheme.textSecondary, fontSize: 10)),
+                      TextStyle(color: context.appColors.textSecondary, fontSize: 10)),
             ],
           ),
 
@@ -659,22 +659,23 @@ class _EmptyRanking extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.leaderboard_outlined,
-                  color: AppTheme.textSecondary, size: 64)
+          Icon(Icons.leaderboard_outlined,
+                  color: context.appColors.textSecondary, size: 64)
               .animate(onPlay: (c) => c.repeat(reverse: true))
               .fadeIn(duration: 1000.ms),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Nenhuma pontuação ainda.',
             style: TextStyle(
-                color: AppTheme.textSecondary,
+                color: context.appColors.textSecondary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Libere uma questão para começar.',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+            style: TextStyle(
+                color: context.appColors.textSecondary, fontSize: 14),
           ),
         ],
       ),

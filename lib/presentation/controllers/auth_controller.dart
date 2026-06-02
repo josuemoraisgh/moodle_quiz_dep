@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/utils/quiz_nav_notifier.dart';
 import '../../domain/entities/app_settings_entity.dart';
 import '../../domain/entities/local_user_entity.dart';
 import '../../domain/entities/student_entity.dart';
@@ -15,7 +16,12 @@ class AuthController extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  AuthController(this._repo);
+  AuthController(this._repo) {
+    // Pré-carrega a sessão global de forma síncrona para que o router nunca
+    // veja _user == null antes de init() completar e redirecione para /login.
+    _user = quizGlobalUserNotifier.value;
+    if (_user != null) _syncStudentModeNotifier();
+  }
 
   LocalUserEntity? get user => _user;
   AppSettingsEntity get settings => _settings;
@@ -38,6 +44,7 @@ class AuthController extends ChangeNotifier {
     _settings = await _repo.getSettings();
     _students = await _repo.getStudents();
     _user = await _repo.loadSession();
+    _syncStudentModeNotifier();
     notifyListeners();
   }
 
@@ -58,6 +65,7 @@ class AuthController extends ChangeNotifier {
         _error = 'Usuário ou senha incorretos.';
       } else {
         _user = user;
+        _syncStudentModeNotifier();
         await _repo.saveSession(user);
       }
     } catch (e) {
@@ -67,16 +75,19 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  /// Autentica como convidado (acesso somente-leitura, sem persistência).
+  /// Autentica como convidado (acesso somente-leitura).
   Future<void> loginAsGuest() async {
     _user = const LocalUserEntity(id: -1, name: 'Convidado', isTeacher: false);
     _error = null;
+    await _repo.saveSession(_user!); // persiste globalmente
+    _syncStudentModeNotifier();
     notifyListeners();
   }
 
   Future<void> logout() async {
     await _repo.clearSession();
     _user = null;
+    _syncStudentModeNotifier();
     notifyListeners();
   }
 
@@ -106,6 +117,19 @@ class AuthController extends ChangeNotifier {
 
   void _setLoading(bool v) {
     _isLoading = v;
+    _syncStudentModeNotifier();
     notifyListeners();
+  }
+
+  /// Sincroniza os notifiers externos com o estado de auth atual.
+  void _syncStudentModeNotifier() {
+    quizStudentModeNotifier.value =
+        _user != null && !_user!.isTeacher && !_user!.isGuest;
+
+    // Fullscreen: falso só quando convidado logado; true em todos os outros
+    // casos — mas apenas se o QuizSlideHost estiver montado.
+    if (!quizWidgetMounted) return;
+    final isGuest = _user?.isGuest ?? false;
+    quizNeedsFullscreenNotifier.value = !isGuest;
   }
 }

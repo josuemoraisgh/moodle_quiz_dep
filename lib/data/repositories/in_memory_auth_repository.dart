@@ -1,13 +1,24 @@
 import '../../core/config/quiz_runtime_config.dart';
+import '../../core/utils/quiz_nav_notifier.dart';
 import '../../domain/entities/app_settings_entity.dart';
 import '../../domain/entities/local_user_entity.dart';
 import '../../domain/entities/student_entity.dart';
 import '../../domain/repositories/i_quiz_auth_repository.dart';
 
+/// Garante que senhas nunca fiquem vazias — usa os defaults de fábrica.
+AppSettingsEntity _withDefaults(AppSettingsEntity s) => s.copyWith(
+      teacherPassword: s.teacherPassword.trim().isEmpty
+          ? AppSettingsEntity.defaultTeacherPassword
+          : null,
+      studentPassword: s.studentPassword.trim().isEmpty
+          ? AppSettingsEntity.defaultStudentPassword
+          : null,
+    );
+
 class InMemoryAuthRepository implements IQuizAuthRepository {
-  // Sessão compartilhada entre todas as instâncias (navegação entre slides).
-  // Zerada somente em clearSession() — logout explícito.
-  static LocalUserEntity? _sharedSession;
+  // A sessão é armazenada no notifier global, compartilhado entre todas as
+  // instâncias. Assim o login feito no overlay de auth vale para todos os
+  // slides de quiz sem exigir re-autenticação.
 
   AppSettingsEntity _settings;
   List<StudentEntity> _students;
@@ -15,7 +26,7 @@ class InMemoryAuthRepository implements IQuizAuthRepository {
   InMemoryAuthRepository({
     required AppSettingsEntity settings,
     List<StudentEntity> students = const [],
-  })  : _settings = settings,
+  })  : _settings = _withDefaults(settings),
         _students = List.of(students);
 
   @override
@@ -71,14 +82,15 @@ class InMemoryAuthRepository implements IQuizAuthRepository {
 
   @override
   Future<void> saveSession(LocalUserEntity user) async {
-    _sharedSession = user;
+    quizGlobalUserNotifier.value = user;
   }
 
   @override
-  Future<LocalUserEntity?> loadSession() async => _sharedSession;
+  Future<LocalUserEntity?> loadSession() async =>
+      quizGlobalUserNotifier.value;
 
   @override
   Future<void> clearSession() async {
-    _sharedSession = null;
+    quizGlobalUserNotifier.value = null;
   }
 }

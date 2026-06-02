@@ -4,6 +4,8 @@ export 'core/bootstrap/quiz_core.dart';
 export 'core/services/quiz_state_service.dart';
 export 'core/services/file_import_service.dart';
 export 'app/moodle_quiz_app.dart';
+export 'core/theme/app_theme.dart';
+export 'core/theme/theme_notifier.dart';
 export 'domain/entities/app_settings_entity.dart';
 export 'domain/entities/local_quiz_entity.dart';
 export 'domain/entities/local_user_entity.dart';

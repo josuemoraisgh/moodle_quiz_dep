@@ -16,7 +16,6 @@ import '../../../domain/entities/question_entity.dart';
 import '../../../domain/entities/quiz_state_entity.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/professor_controller.dart';
-import '../../../core/utils/fullscreen_button.dart';
 import '../../widgets/question_engine_widget.dart';
 import '../../widgets/moodle_html_renderer.dart';
 import '../../widgets/timer_widget.dart';
@@ -89,7 +88,7 @@ class _ProfessorHomePageState extends State<ProfessorHomePage> {
             },
             child: Scaffold(
               body: Container(
-                decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+                decoration: BoxDecoration(gradient: context.appColors.bgGradient),
                 child: SafeArea(
                   child: Responsive.isDesktop(context)
                       ? _DesktopLayout(
@@ -155,7 +154,7 @@ class _DesktopLayout extends StatelessWidget {
               onSelect: onIndexChanged,
             ),
           ),
-          const VerticalDivider(width: 1, color: AppTheme.bgCard),
+          VerticalDivider(width: 1, color: context.appColors.bgCard),
         ],
         // Painel principal – controles
         Expanded(
@@ -202,14 +201,14 @@ class _MobileLayout extends StatelessWidget {
       child: Column(
         children: [
           _ProfessorAppBar(auth: auth, prof: prof),
-          const TabBar(
-            tabs: [
+          TabBar(
+            tabs: const [
               Tab(icon: Icon(Icons.list_alt), text: 'Questões'),
               Tab(icon: Icon(Icons.tune), text: 'Controle'),
             ],
             indicatorColor: AppTheme.primary,
-            labelColor: AppTheme.textPrimary,
-            unselectedLabelColor: AppTheme.textSecondary,
+            labelColor: context.appColors.textPrimary,
+            unselectedLabelColor: context.appColors.textSecondary,
           ),
           Expanded(
             child: TabBarView(
@@ -275,14 +274,14 @@ class _ProfessorAppBar extends StatelessWidget {
               final isOffline =
                   ctx.read<QuizRuntimeConfig>().isOffline;
               return IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: AppTheme.textSecondary, size: 20),
+                icon: Icon(Icons.arrow_back_ios_new_rounded,
+                    color: ctx.appColors.textSecondary, size: 20),
                 tooltip: isOffline
                     ? 'Configurações do quiz'
                     : 'Seleção de questionário',
                 onPressed: () => isOffline
-                    ? ctx.go('${AppRouter.professorSetup}?force')
-                    : ctx.go(AppRouter.professorQuiz),
+                    ? ctx.push('${AppRouter.professorSetup}?force')
+                    : ctx.push(AppRouter.professorQuiz),
               );
             },
           ),
@@ -301,14 +300,13 @@ class _ProfessorAppBar extends StatelessWidget {
               prof.quizState.quizTitle.isNotEmpty
                   ? prof.quizState.quizTitle
                   : (prof.selectedQuiz?.name ?? AppConfig.appName),
-              style: const TextStyle(
-                  color: AppTheme.textPrimary,
+              style: TextStyle(
+                  color: context.appColors.textPrimary,
                   fontWeight: FontWeight.w800,
                   fontSize: 16),
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const FullscreenButton(),
           if (onToggleStartTimer != null)
             Tooltip(
               message: startTimerOnFirstResponse
@@ -366,7 +364,7 @@ class _ProfessorAppBar extends StatelessWidget {
             onPressed: () => context.push(AppRouter.professorRank),
           ),
           IconButton(
-            icon: const Icon(Icons.logout, color: AppTheme.textSecondary),
+            icon: Icon(Icons.logout, color: context.appColors.textSecondary),
             tooltip: 'Sair',
             onPressed: () async {
               await auth.logout();
@@ -397,13 +395,14 @@ class _QuestionListPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (questions.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Text(
             'Nenhuma questão disponível.\nConsulte o log de carregamento.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+            style: TextStyle(
+                color: context.appColors.textSecondary, fontSize: 13),
           ),
         ),
       );
@@ -412,7 +411,8 @@ class _QuestionListPanel extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.all(12),
       itemCount: questions.length,
-      itemBuilder: (_, i) {
+      itemBuilder: (context, i) {
+        final colors = context.appColors;
         final questionOffset = i;
         final q = questions[questionOffset];
         final isActive = quizState.currentPage == q.page && quizState.isActive;
@@ -428,7 +428,7 @@ class _QuestionListPanel extends StatelessWidget {
               gradient: isActive ? AppTheme.primaryGradient : null,
               color: isActive
                   ? null
-                  : (isSelected ? AppTheme.bgCard : AppTheme.bgCardAlt),
+                  : (isSelected ? colors.bgCard : colors.bgCardAlt),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected ? AppTheme.primary : Colors.transparent,
@@ -443,7 +443,7 @@ class _QuestionListPanel extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isActive
                         ? Colors.white.withValues(alpha: 0.2)
-                        : AppTheme.bgDark,
+                        : colors.bgSurface,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
@@ -464,7 +464,7 @@ class _QuestionListPanel extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: isActive ? Colors.white : AppTheme.textPrimary,
+                      color: isActive ? Colors.white : colors.textPrimary,
                       fontSize: 13,
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -549,7 +549,7 @@ class _CollapsedQuestionListHandle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppTheme.bgDark.withValues(alpha: 0.35),
+      color: context.appColors.bgSurface.withValues(alpha: 0.6),
       child: Column(
         children: [
           Padding(
@@ -570,7 +570,7 @@ class _CollapsedQuestionListHandle extends StatelessWidget {
                     child: Text(
                       '-',
                       style: GoogleFonts.poppins(
-                        color: AppTheme.textSecondary,
+                        color: context.appColors.textSecondary,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -857,13 +857,13 @@ class _ControlPanelState extends State<_ControlPanel> {
       BuildContext context, ProfessorController prof) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppTheme.bgCard,
-        title: const Text('Reiniciar Quiz',
-            style: TextStyle(color: AppTheme.textPrimary)),
-        content: const Text(
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ctx.appColors.bgCard,
+        title: Text('Reiniciar Quiz',
+            style: TextStyle(color: ctx.appColors.textPrimary)),
+        content: Text(
           'Isso apaga todas as respostas e pontuações. Confirma?',
-          style: TextStyle(color: AppTheme.textSecondary),
+          style: TextStyle(color: ctx.appColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -1007,17 +1007,17 @@ class _TopControlsColumn extends StatelessWidget {
         if (state.isActive && state.isTimerPending) ...[
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: AppTheme.cardDecoration(),
-            child: const Row(
+            decoration: context.appColors.cardDecoration(),
+            child: Row(
               children: [
-                Icon(Icons.hourglass_top_rounded,
+                const Icon(Icons.hourglass_top_rounded,
                     color: AppTheme.warning, size: 22),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'Aguardando a primeira resposta para iniciar o cronômetro.',
                     style: TextStyle(
-                      color: AppTheme.textSecondary,
+                      color: context.appColors.textSecondary,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1137,12 +1137,12 @@ class _StatusCard extends StatelessWidget {
           AppTheme.accent,
           Icons.emoji_events
         ),
-      _ => ('Aguardando Início', AppTheme.textSecondary, Icons.hourglass_empty),
+      _ => ('Aguardando Início', context.appColors.textSecondary, Icons.hourglass_empty),
     };
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: AppTheme.cardDecoration(glowing: state.isActive),
+      decoration: context.appColors.cardDecoration(glowing: state.isActive),
       child: Row(
         children: [
           Icon(icon, color: color, size: 24),
@@ -1157,8 +1157,8 @@ class _StatusCard extends StatelessWidget {
                 Text(
                   'Questão ${state.currentPage + 1}'
                   '${state.totalPages > 0 ? ' / ${state.totalPages}' : ''}',
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 12),
+                  style: TextStyle(
+                      color: context.appColors.textSecondary, fontSize: 12),
                 ),
             ],
           ),
@@ -1195,9 +1195,9 @@ class _DurationSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Tempo por questão',
+        Text('Tempo por questão',
             style: TextStyle(
-                color: AppTheme.textSecondary,
+                color: context.appColors.textSecondary,
                 fontSize: 12,
                 fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
@@ -1214,16 +1214,20 @@ class _DurationSelector extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   gradient: selected ? AppTheme.primaryGradient : null,
-                  color: selected ? null : AppTheme.bgCard,
+                  color: selected ? null : context.appColors.bgCard,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: selected ? AppTheme.primary : AppTheme.bgCardAlt,
+                    color: selected
+                        ? AppTheme.primary
+                        : context.appColors.bgCardAlt,
                   ),
                 ),
                 child: Text(
                   '${sec}s',
                   style: TextStyle(
-                    color: selected ? Colors.white : AppTheme.textSecondary,
+                    color: selected
+                        ? Colors.white
+                        : context.appColors.textSecondary,
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
                   ),
@@ -1276,7 +1280,7 @@ class _SelectedQuestionCardState extends State<_SelectedQuestionCard> {
       children: [
         Container(
           padding: EdgeInsets.fromLTRB(leftPad, 12, rightPad, 12),
-          decoration: AppTheme.cardDecoration(),
+          decoration: context.appColors.cardDecoration(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1284,8 +1288,17 @@ class _SelectedQuestionCardState extends State<_SelectedQuestionCard> {
               RichText(
                 text: TextSpan(
                   children: [
+                    const TextSpan(
+                      text: 'Questão ',
+                      style: TextStyle(
+                        color: AppTheme.accent,
+                        fontSize: 25,
+                        fontWeight: FontWeight.w700,
+                        height: 1.6,
+                      ),
+                    ),
                     TextSpan(
-                      text: 'Questão ${widget.question.slot}',
+                      text: '${widget.question.slot}',
                       style: const TextStyle(
                         color: AppTheme.accent,
                         fontSize: 25,
@@ -1296,8 +1309,8 @@ class _SelectedQuestionCardState extends State<_SelectedQuestionCard> {
                     if (plainTitle.isNotEmpty)
                       TextSpan(
                         text: ' — $plainTitle',
-                        style: const TextStyle(
-                          color: AppTheme.textPrimary,
+                        style: TextStyle(
+                          color: context.appColors.textPrimary,
                           fontSize: 25,
                           fontWeight: FontWeight.w600,
                           height: 1.6,
@@ -1360,12 +1373,13 @@ class _QuestionFeedbackView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final feedback = question.generalFeedback.trim();
     if (feedback.isEmpty) {
-      return const Text(
+      return Text(
         'Esta questão não possui feedback cadastrado.',
         style: TextStyle(
-          color: AppTheme.textSecondary,
+          color: colors.textSecondary,
           fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
@@ -1382,8 +1396,8 @@ class _QuestionFeedbackView extends StatelessWidget {
       ),
       child: MoodleHtmlRenderer(
         html: feedback,
-        textStyle: const TextStyle(
-          color: AppTheme.textPrimary,
+        textStyle: TextStyle(
+          color: colors.textPrimary,
           fontSize: 14,
           fontWeight: FontWeight.w600,
           height: 1.4,
@@ -1418,12 +1432,14 @@ class _QuestionNavArrow extends StatelessWidget {
             child: IconButton(
               onPressed: onPressed,
               icon: Icon(icon, size: 30),
-              color: AppTheme.textSecondary,
-              disabledColor: AppTheme.textSecondary.withValues(alpha: 0.25),
+              color: context.appColors.textSecondary,
+              disabledColor:
+                  context.appColors.textSecondary.withValues(alpha: 0.25),
               style: IconButton.styleFrom(
-                backgroundColor: AppTheme.bgDark.withValues(alpha: 0.45),
+                backgroundColor:
+                    context.appColors.bgSurface.withValues(alpha: 0.55),
                 disabledBackgroundColor:
-                    AppTheme.bgDark.withValues(alpha: 0.18),
+                    context.appColors.bgSurface.withValues(alpha: 0.25),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -1478,26 +1494,28 @@ class _MiniRanking extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = context.appColors;
     final top5 = scores.take(5).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Top 5',
+        Text('Top 5',
             style: TextStyle(
-                color: AppTheme.textSecondary,
+                color: appColors.textSecondary,
                 fontSize: 12,
                 fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
         ...top5.asMap().entries.map((e) {
           final s = e.value;
-          final colors = [
+          final podiumColors = [
             AppTheme.gold,
             AppTheme.silver,
             AppTheme.bronze,
-            AppTheme.textSecondary,
-            AppTheme.textSecondary,
+            appColors.textSecondary,
+            appColors.textSecondary,
           ];
-          final rankColor = e.key < 3 ? colors[e.key] : AppTheme.textSecondary;
+          final rankColor =
+              e.key < 3 ? podiumColors[e.key] : appColors.textSecondary;
           return Padding(
             padding: const EdgeInsets.only(bottom: 6),
             child: Row(
@@ -1513,8 +1531,8 @@ class _MiniRanking extends StatelessWidget {
                 Expanded(
                   child: Text(
                     s.studentName,
-                    style: const TextStyle(
-                        color: AppTheme.textPrimary, fontSize: 13),
+                    style: TextStyle(
+                        color: appColors.textPrimary, fontSize: 13),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -1533,3 +1551,4 @@ class _MiniRanking extends StatelessWidget {
     );
   }
 }
+

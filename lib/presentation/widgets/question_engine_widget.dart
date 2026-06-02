@@ -72,24 +72,25 @@ class QuestionEngineWidget extends StatelessWidget {
     final textStyle = GoogleFonts.nunito(
       fontSize: baseFontSize ?? (compact ? 14 : (isMobile ? 16 : 18)),
       fontWeight: FontWeight.w600,
-      color: AppTheme.textPrimary,
+      color: context.appColors.textPrimary,
       height: 1.5,
     );
 
+    final colors = context.appColors;
     final children = <Widget>[
       if (_isAnswerMode) ...[
-        _buildTimer(),
+        _buildTimer(colors),
         SizedBox(height: compact ? 10 : 16),
       ],
       if (showTypeHeader) ...[
-        _buildQuestionTypeHeader(spec),
+        _buildQuestionTypeHeader(spec, colors),
         SizedBox(height: compact ? 8 : 12),
       ],
       if (showPrompt) ...[
-        _buildQuestionPrompt(textStyle),
+        _buildQuestionPrompt(textStyle, colors),
         SizedBox(height: compact ? 10 : 16),
       ],
-      ..._buildAnswerSurface(textStyle),
+      ..._buildAnswerSurface(textStyle, colors),
       if (_isAnswerMode) ...[
         SizedBox(height: compact ? 12 : 20),
         _buildSubmitButton(_hasAnswer),
@@ -102,9 +103,9 @@ class QuestionEngineWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildQuestionTypeHeader(_QuestionUiSpec spec) {
+  Widget _buildQuestionTypeHeader(_QuestionUiSpec spec, AppColors colors) {
     final titleStyle = TextStyle(
-      color: AppTheme.textPrimary,
+      color: colors.textPrimary,
       fontSize: compact ? 12 : 13,
       fontWeight: FontWeight.w800,
       letterSpacing: 0.2,
@@ -134,7 +135,7 @@ class QuestionEngineWidget extends StatelessWidget {
                 Text(
                   spec.instruction,
                   style: TextStyle(
-                    color: AppTheme.textSecondary,
+                    color: colors.textSecondary,
                     fontSize: compact ? 11 : 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -147,20 +148,21 @@ class QuestionEngineWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildTimer() {
+  Widget _buildTimer(AppColors colors) {
     if (endsAt != null) return TimerWidget(endsAt: endsAt!);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: AppTheme.cardDecoration(),
-      child: const Row(
+      decoration: colors.cardDecoration(),
+      child: Row(
         children: [
-          Icon(Icons.hourglass_top_rounded, color: AppTheme.warning, size: 22),
-          SizedBox(width: 10),
+          const Icon(Icons.hourglass_top_rounded,
+              color: AppTheme.warning, size: 22),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               'O cronometro vai comecar quando a primeira resposta for enviada.',
               style: TextStyle(
-                color: AppTheme.textSecondary,
+                color: colors.textSecondary,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -171,7 +173,7 @@ class QuestionEngineWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildQuestionPrompt(TextStyle textStyle) {
+  Widget _buildQuestionPrompt(TextStyle textStyle, AppColors colors) {
     final html = _promptHtml;
     final content = (question.isGapSelect || question.isDdwtos) &&
             question.gapInputData != null
@@ -184,7 +186,7 @@ class QuestionEngineWidget extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, showTypeHeader ? 20 : 8, 20, 20),
-      decoration: AppTheme.cardDecoration(glowing: _isAnswerMode),
+      decoration: colors.cardDecoration(glowing: _isAnswerMode),
       child: content,
     );
   }
@@ -258,7 +260,7 @@ class QuestionEngineWidget extends StatelessWidget {
         : _PromptQuality.empty;
   }
 
-  List<Widget> _buildAnswerSurface(TextStyle textStyle) {
+  List<Widget> _buildAnswerSurface(TextStyle textStyle, AppColors colors) {
     final surface = <Widget>[];
 
     if (question.isOrdering && _orderingControls.isNotEmpty) {
@@ -267,24 +269,24 @@ class QuestionEngineWidget extends StatelessWidget {
       surface.addAll(_buildChoiceInputs());
     } else {
       if (question.isMatch && question.matchData != null) {
-        surface.add(_buildMatchInputs(textStyle));
+        surface.add(_buildMatchInputs(textStyle, colors));
       } else if (question.isDdImage && question.ddMarkerData != null) {
         surface.add(_buildDdMarkerInputs());
       } else if ((question.isGapSelect || question.isDdwtos) &&
           question.gapInputData != null) {
         if (!_gapPromptHasInlineTargets) {
-          surface.add(_buildGapInputs());
+          surface.add(_buildGapInputs(colors));
         }
       } else {
         final checkboxControls = _answerableControls
             .where((c) => c.isMultipleChoice)
             .toList(growable: false);
         if (checkboxControls.isNotEmpty) {
-          surface.add(_buildCheckboxInputs(checkboxControls));
+          surface.add(_buildCheckboxInputs(checkboxControls, colors));
         } else {
           final genericControls = _genericControls;
           if (genericControls.isNotEmpty) {
-            surface.add(_buildGenericControls(genericControls));
+            surface.add(_buildGenericControls(genericControls, colors));
           }
         }
       }
@@ -457,20 +459,20 @@ class QuestionEngineWidget extends StatelessWidget {
     return widgets;
   }
 
-  Widget _badge(String text, bool correct) {
+  Widget _badge(String text, bool correct, AppColors colors) {
     final size = compact ? 26.0 : 34.0;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: correct ? AppTheme.success : AppTheme.bgDark,
+        color: correct ? AppTheme.success : colors.bgSurface,
         borderRadius: BorderRadius.circular(8),
       ),
       alignment: Alignment.center,
       child: Text(
         text,
         style: TextStyle(
-          color: correct ? Colors.white : AppTheme.textSecondary,
+          color: correct ? Colors.white : colors.textSecondary,
           fontWeight: FontWeight.w800,
           fontSize: compact ? 12 : 15,
         ),
@@ -478,10 +480,11 @@ class QuestionEngineWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildCheckboxInputs(List<MoodleAnswerControl> controls) {
+  Widget _buildCheckboxInputs(
+      List<MoodleAnswerControl> controls, AppColors colors) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: AppTheme.cardDecoration(),
+      decoration: colors.cardDecoration(),
       child: Column(
         children: controls.map((control) {
           final selected = selectedAnswers[control.name] == control.value;
@@ -495,18 +498,18 @@ class QuestionEngineWidget extends StatelessWidget {
                     ),
             controlAffinity: ListTileControlAffinity.leading,
             activeColor: AppTheme.primary,
-            title: _controlLabel(control),
+            title: _controlLabel(control, colors),
           );
         }).toList(),
       ),
     );
   }
 
-  Widget _buildMatchInputs(TextStyle textStyle) {
+  Widget _buildMatchInputs(TextStyle textStyle, AppColors colors) {
     final matchData = question.matchData!;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: AppTheme.cardDecoration(),
+      decoration: colors.cardDecoration(),
       child: Column(
         children: matchData.subQuestions.asMap().entries.map((entry) {
           final index = entry.key;
@@ -518,7 +521,7 @@ class QuestionEngineWidget extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _badge('${index + 1}', false),
+                _badge('${index + 1}', false, colors),
                 const SizedBox(width: 10),
                 Expanded(
                   flex: 5,
@@ -536,6 +539,7 @@ class QuestionEngineWidget extends StatelessWidget {
                     value: selected,
                     options: matchData.options,
                     hint: 'Escolha uma opcao...',
+                    colors: colors,
                     onChanged: (value) => onSelectAnswer?.call(
                       sub.inputName,
                       value ?? '',
@@ -550,11 +554,11 @@ class QuestionEngineWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildGapInputs() {
+  Widget _buildGapInputs(AppColors colors) {
     final gap = question.gapInputData!;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: AppTheme.cardDecoration(),
+      decoration: colors.cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: List.generate(gap.gapCount, (index) {
@@ -564,13 +568,14 @@ class QuestionEngineWidget extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 10),
             child: Row(
               children: [
-                _badge('[$gapNum]', false),
+                _badge('[$gapNum]', false, colors),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _dropdown(
                     value: _displaySelectedAnswers[inputName],
                     options: gap.optionsForGap(gapNum),
                     hint: 'Preencha a lacuna [$gapNum]...',
+                    colors: colors,
                     onChanged: (value) => onSelectAnswer?.call(
                       inputName,
                       value ?? '',
@@ -807,10 +812,11 @@ class QuestionEngineWidget extends StatelessWidget {
         .trim();
   }
 
-  Widget _buildGenericControls(List<MoodleAnswerControl> controls) {
+  Widget _buildGenericControls(
+      List<MoodleAnswerControl> controls, AppColors colors) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: AppTheme.cardDecoration(),
+      decoration: colors.cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: controls.map((control) {
@@ -819,10 +825,12 @@ class QuestionEngineWidget extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 12),
               child: _labeledField(
                 control,
+                colors,
                 _dropdown(
                   value: selectedAnswers[control.name],
                   options: control.options,
                   hint: 'Escolha uma opcao...',
+                  colors: colors,
                   onChanged: (value) => onSelectAnswer?.call(
                     control.name,
                     value ?? '',
@@ -836,6 +844,7 @@ class QuestionEngineWidget extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: _labeledField(
               control,
+              colors,
               TextFormField(
                 initialValue: selectedAnswers[control.name] ?? control.value,
                 enabled: !_controlsDisabled,
@@ -843,7 +852,7 @@ class QuestionEngineWidget extends StatelessWidget {
                 maxLines: control.isLongText ? 8 : 1,
                 keyboardType:
                     control.type == 'number' ? TextInputType.number : null,
-                style: const TextStyle(color: AppTheme.textPrimary),
+                style: TextStyle(color: colors.textPrimary),
                 decoration: InputDecoration(
                   hintText: control.type == 'number'
                       ? 'Digite um valor numerico...'
@@ -861,7 +870,8 @@ class QuestionEngineWidget extends StatelessWidget {
     );
   }
 
-  Widget _labeledField(MoodleAnswerControl control, Widget field) {
+  Widget _labeledField(
+      MoodleAnswerControl control, AppColors colors, Widget field) {
     final hasLabel = control.label.isNotEmpty || control.htmlLabel.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -869,11 +879,11 @@ class QuestionEngineWidget extends StatelessWidget {
         if (hasLabel) ...[
           DefaultTextStyle(
             style: TextStyle(
-              color: AppTheme.textSecondary,
+              color: colors.textSecondary,
               fontSize: compact ? 12 : 13,
               fontWeight: FontWeight.w700,
             ),
-            child: _controlLabel(control),
+            child: _controlLabel(control, colors),
           ),
           const SizedBox(height: 8),
         ],
@@ -882,12 +892,12 @@ class QuestionEngineWidget extends StatelessWidget {
     );
   }
 
-  Widget _controlLabel(MoodleAnswerControl control) {
+  Widget _controlLabel(MoodleAnswerControl control, AppColors colors) {
     if (control.htmlLabel.isNotEmpty) {
       return MoodleHtmlRenderer(
         html: control.htmlLabel,
         textStyle: TextStyle(
-          color: AppTheme.textPrimary,
+          color: colors.textPrimary,
           fontSize: compact ? 13 : 15,
           fontWeight: FontWeight.w600,
         ),
@@ -896,7 +906,7 @@ class QuestionEngineWidget extends StatelessWidget {
     return Text(
       control.label.isNotEmpty ? control.label : 'Resposta',
       style: TextStyle(
-        color: AppTheme.textPrimary,
+        color: colors.textPrimary,
         fontSize: compact ? 13 : 15,
         fontWeight: FontWeight.w600,
       ),
@@ -908,13 +918,15 @@ class QuestionEngineWidget extends StatelessWidget {
     required List<ParsedChoice> options,
     required String hint,
     required ValueChanged<String?> onChanged,
+    AppColors? colors,
   }) {
+    final effectiveColors = colors ?? AppColors.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        color: AppTheme.bgDark,
+        color: effectiveColors.bgSurface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.bgCardAlt),
+        border: Border.all(color: effectiveColors.bgCardAlt),
       ),
       child: _AnswerDropdown(
         value: value,
@@ -933,7 +945,9 @@ class QuestionEngineWidget extends StatelessWidget {
     required List<ParsedChoice> options,
     required String hint,
     required ValueChanged<String?> onChanged,
+    AppColors? colors,
   }) {
+    final colors2 = colors ?? AppColors.dark;
     final selected = _AnswerDropdown.selectedValue(value, options);
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -944,10 +958,10 @@ class QuestionEngineWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
-          color: _controlsDisabled ? AppTheme.bgCard : AppTheme.bgDark,
+          color: _controlsDisabled ? colors2.bgCard : colors2.bgSurface,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: selected == null ? AppTheme.bgCardAlt : AppTheme.primary,
+            color: selected == null ? colors2.bgCardAlt : AppTheme.primary,
             width: selected == null ? 1 : 1.5,
           ),
         ),
@@ -1217,7 +1231,7 @@ class _DdMarkerInputState extends State<_DdMarkerInput> {
 
     return Container(
       padding: EdgeInsets.all(widget.compact ? 10 : 14),
-      decoration: AppTheme.cardDecoration(),
+      decoration: context.appColors.cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1247,14 +1261,17 @@ class _DdMarkerInputState extends State<_DdMarkerInput> {
                           widget.data.backgroundImageUrl,
                           fit: BoxFit.fill,
                           gaplessPlayback: true,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: AppTheme.bgDark,
-                            alignment: Alignment.center,
-                            child: const Icon(
-                              Icons.broken_image_rounded,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
+                          errorBuilder: (context, __, ___) {
+                            final c = context.appColors;
+                            return Container(
+                              color: c.bgSurface,
+                              alignment: Alignment.center,
+                              child: Icon(
+                                Icons.broken_image_rounded,
+                                color: c.textSecondary,
+                              ),
+                            );
+                          },
                         ),
                         if (naturalWidth != null)
                           ..._buildPlacedMarkers(
@@ -1275,6 +1292,7 @@ class _DdMarkerInputState extends State<_DdMarkerInput> {
   }
 
   Widget _buildMarkerToolbar(List<DdMarkerChoice> choices) {
+    final colors = context.appColors;
     return Row(
       children: [
         Expanded(
@@ -1293,12 +1311,12 @@ class _DdMarkerInputState extends State<_DdMarkerInput> {
                     ? null
                     : (_) => setState(() => _activeChoiceIndex = index),
                 selectedColor: AppTheme.primary,
-                backgroundColor: AppTheme.bgDark,
-                labelStyle: const TextStyle(
-                  color: AppTheme.textPrimary,
+                backgroundColor: colors.bgSurface,
+                labelStyle: TextStyle(
+                  color: colors.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
-                side: BorderSide(color: AppTheme.bgCardAlt),
+                side: BorderSide(color: colors.bgCardAlt),
               );
             }).toList(),
           ),
@@ -1308,7 +1326,7 @@ class _DdMarkerInputState extends State<_DdMarkerInput> {
           child: IconButton(
             onPressed: widget.disabled ? null : _clearMarkers,
             icon: const Icon(Icons.clear_all_rounded),
-            color: AppTheme.textSecondary,
+            color: colors.textSecondary,
           ),
         ),
       ],
@@ -1337,7 +1355,7 @@ class _DdMarkerInputState extends State<_DdMarkerInput> {
               decoration: BoxDecoration(
                 color: AppTheme.warning.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AppTheme.bgDark, width: 1.5),
+                border: Border.all(color: Colors.black54, width: 1.5),
                 boxShadow: const [
                   BoxShadow(
                     color: Colors.black45,
@@ -1352,13 +1370,13 @@ class _DdMarkerInputState extends State<_DdMarkerInput> {
                   const Icon(
                     Icons.my_location_rounded,
                     size: 12,
-                    color: AppTheme.bgDark,
+                    color: Colors.black87,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     choice.text,
                     style: const TextStyle(
-                      color: AppTheme.bgDark,
+                      color: Colors.black87,
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
                     ),
@@ -1482,16 +1500,17 @@ class _AnswerDropdownState extends State<_AnswerDropdown> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return DropdownButton<String>(
       value: _selected,
       isExpanded: widget.isExpanded,
       isDense: widget.compact,
       underline: const SizedBox.shrink(),
-      dropdownColor: AppTheme.bgCard,
+      dropdownColor: colors.bgCard,
       hint: Text(
         widget.hint,
         style: TextStyle(
-          color: AppTheme.textSecondary,
+          color: colors.textSecondary,
           fontSize: 13,
           fontWeight: widget.compact ? FontWeight.w700 : FontWeight.w400,
         ),
@@ -1504,8 +1523,8 @@ class _AnswerDropdownState extends State<_AnswerDropdown> {
                 option.text,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppTheme.textPrimary,
+                style: TextStyle(
+                  color: colors.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -1519,7 +1538,7 @@ class _AnswerDropdownState extends State<_AnswerDropdown> {
               child: Text(
                 option.text,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: AppTheme.textPrimary),
+                style: TextStyle(color: colors.textPrimary),
               ),
             ),
           )
@@ -1667,17 +1686,18 @@ class _OrderingInputState extends State<_OrderingInput> {
   @override
   Widget build(BuildContext context) {
     if (_ordered.isEmpty) return const SizedBox.shrink();
+    final colors = context.appColors;
 
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: AppTheme.cardDecoration(),
+      decoration: colors.cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             'Use as setas para ajustar a ordem final dos itens.',
             style: TextStyle(
-              color: AppTheme.textSecondary,
+              color: colors.textSecondary,
               fontSize: widget.compact ? 11 : 12,
               fontWeight: FontWeight.w700,
             ),
@@ -1697,19 +1717,20 @@ class _OrderingInputState extends State<_OrderingInput> {
   }
 
   Widget _orderingTile(int index) {
+    final colors = context.appColors;
     final control = _ordered[index];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        color: AppTheme.bgDark,
+        color: colors.bgSurface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.bgCardAlt),
+        border: Border.all(color: colors.bgCardAlt),
       ),
       child: Row(
         children: [
           Icon(
             Icons.drag_handle_rounded,
-            color: AppTheme.textSecondary.withValues(alpha: 0.8),
+            color: colors.textSecondary.withValues(alpha: 0.8),
           ),
           const SizedBox(width: 10),
           Expanded(child: _orderingLabel(control, null)),
@@ -1720,8 +1741,8 @@ class _OrderingInputState extends State<_OrderingInput> {
               onPressed:
                   widget.disabled || index == 0 ? null : () => _move(index, -1),
               icon: const Icon(Icons.keyboard_arrow_up_rounded),
-              color: AppTheme.textPrimary,
-              disabledColor: AppTheme.textSecondary.withValues(alpha: 0.35),
+              color: colors.textPrimary,
+              disabledColor: colors.textSecondary.withValues(alpha: 0.35),
               constraints: const BoxConstraints.tightFor(width: 36, height: 36),
               padding: EdgeInsets.zero,
             ),
@@ -1733,8 +1754,8 @@ class _OrderingInputState extends State<_OrderingInput> {
                   ? null
                   : () => _move(index, 1),
               icon: const Icon(Icons.keyboard_arrow_down_rounded),
-              color: AppTheme.textPrimary,
-              disabledColor: AppTheme.textSecondary.withValues(alpha: 0.35),
+              color: colors.textPrimary,
+              disabledColor: colors.textSecondary.withValues(alpha: 0.35),
               constraints: const BoxConstraints.tightFor(width: 36, height: 36),
               padding: EdgeInsets.zero,
             ),
@@ -1745,12 +1766,13 @@ class _OrderingInputState extends State<_OrderingInput> {
   }
 
   Widget _orderingLabel(MoodleAnswerControl control, Color? color) {
+    final colors = context.appColors;
     if (control.htmlLabel.isNotEmpty) {
       return MoodleHtmlRenderer(
         html: control.htmlLabel,
         textStyle: widget.textStyle.copyWith(
           fontSize: 15,
-          color: color ?? AppTheme.textPrimary,
+          color: color ?? colors.textPrimary,
         ),
       );
     }
@@ -1759,7 +1781,7 @@ class _OrderingInputState extends State<_OrderingInput> {
       overflow: TextOverflow.ellipsis,
       style: widget.textStyle.copyWith(
         fontSize: 15,
-        color: color ?? AppTheme.textPrimary,
+        color: color ?? colors.textPrimary,
       ),
     );
   }

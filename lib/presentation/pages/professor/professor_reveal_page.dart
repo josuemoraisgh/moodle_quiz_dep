@@ -84,7 +84,7 @@ class _RevealScaffoldState extends State<_RevealScaffold> {
       body: Stack(
         children: [
           Container(
-            decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+            decoration: BoxDecoration(gradient: context.appColors.bgGradient),
             child: SafeArea(
               child: Column(
                 children: [
@@ -95,8 +95,8 @@ class _RevealScaffoldState extends State<_RevealScaffold> {
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                              color: AppTheme.textSecondary, size: 20),
+                          icon: Icon(Icons.arrow_back_ios_new_rounded,
+                              color: context.appColors.textSecondary, size: 20),
                           onPressed: () => context.pop(),
                         ),
                         const SizedBox(width: 4),
@@ -230,7 +230,7 @@ class _FeedbackView extends StatelessWidget {
     }
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: AppTheme.cardDecoration(),
+      decoration: context.appColors.cardDecoration(),
       child: _MoodleFeedbackHtml(
         html: feedback,
         textStyle: const TextStyle(

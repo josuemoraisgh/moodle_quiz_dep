@@ -6,6 +6,8 @@ import '../core/config/quiz_runtime_config.dart';
 import '../core/router/app_router.dart';
 import '../core/services/quiz_state_service.dart';
 import '../core/theme/app_theme.dart';
+import '../core/theme/theme_notifier.dart';
+import '../core/utils/quiz_nav_notifier.dart';
 import '../domain/entities/app_settings_entity.dart';
 import '../domain/entities/local_quiz_entity.dart';
 import '../domain/entities/question_entity.dart';
@@ -23,6 +25,7 @@ class MoodleQuizApp extends StatelessWidget {
   final IQuizRuntimeRepository quizRepository;
   final QuizStateService stateService;
   final QuizSyncServer syncServer;
+  final ThemeNotifier? themeNotifier;
 
   const MoodleQuizApp({
     super.key,
@@ -31,6 +34,7 @@ class MoodleQuizApp extends StatelessWidget {
     required this.quizRepository,
     required this.stateService,
     required this.syncServer,
+    this.themeNotifier,
   });
 
   static Future<MoodleQuizApp> create({
@@ -39,6 +43,7 @@ class MoodleQuizApp extends StatelessWidget {
     required IQuizRuntimeRepository quizRepository,
     required QuizStateService stateService,
     required QuizSyncServer syncServer,
+    ThemeNotifier? themeNotifier,
   }) async {
     final authController = AuthController(authRepository);
     await authController.init();
@@ -48,6 +53,7 @@ class MoodleQuizApp extends StatelessWidget {
       quizRepository: quizRepository,
       stateService: stateService,
       syncServer: syncServer,
+      themeNotifier: themeNotifier,
     );
   }
 
@@ -75,6 +81,7 @@ class MoodleQuizApp extends StatelessWidget {
     bool startLocalServer = true,
     int slideDisplayIndex = 0,
     bool embeddedInPresentation = false,
+    ThemeNotifier? themeNotifier,
   }) {
     final runtimeQuestion = question == null
         ? null
@@ -121,6 +128,7 @@ class MoodleQuizApp extends StatelessWidget {
       quizRepository: quizRepository,
       stateService: stateService,
       syncServer: syncServer,
+      themeNotifier: themeNotifier,
     );
   }
 
@@ -160,6 +168,10 @@ class MoodleQuizApp extends StatelessWidget {
         Provider<QuizRuntimeConfig>.value(value: config),
         ChangeNotifierProvider.value(value: stateService),
         ChangeNotifierProvider.value(value: authController),
+        ChangeNotifierProvider<ThemeNotifier>(
+          // Cria uma única instância por widget tree — não recria a cada rebuild.
+          create: (_) => themeNotifier ?? ThemeNotifier(),
+        ),
         ChangeNotifierProvider(
           create: (_) => ProfessorController(
             quizRepo: quizRepository,
@@ -180,17 +192,51 @@ class MoodleQuizApp extends StatelessWidget {
   }
 }
 
-class _MaterialShell extends StatelessWidget {
+// _MaterialShell lê quizThemeModeNotifier DIRETAMENTE — sem intermediário
+// ThemeNotifier — para garantir que o tema mude instantaneamente em todos
+// os slides quando o notifier global é alterado de qualquer ponto do app.
+class _MaterialShell extends StatefulWidget {
   const _MaterialShell();
 
   @override
+  State<_MaterialShell> createState() => _MaterialShellState();
+}
+
+class _MaterialShellState extends State<_MaterialShell> {
+  late final RouterConfig<Object> _router;
+
+  @override
+  void initState() {
+    super.initState();
+    quizThemeModeNotifier.addListener(_onTheme);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Constrói o router uma única vez — recriá-lo reiniciaria a navegação.
+    _router = AppRouter.build(context);
+  }
+
+  @override
+  void dispose() {
+    quizThemeModeNotifier.removeListener(_onTheme);
+    super.dispose();
+  }
+
+  void _onTheme() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final router = AppRouter.build(context);
     return MaterialApp.router(
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
-      routerConfig: router,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: quizThemeModeNotifier.value,
+      routerConfig: _router,
     );
   }
 }

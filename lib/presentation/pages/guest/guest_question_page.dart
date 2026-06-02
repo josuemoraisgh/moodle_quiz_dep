@@ -104,7 +104,7 @@ class _GuestQuestionPageState extends State<GuestQuestionPage> {
       body: Stack(
         children: [
           Container(
-            decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+            decoration: BoxDecoration(gradient: context.appColors.bgGradient),
             child: SafeArea(
               child: Align(
                 alignment: Alignment.topCenter,
@@ -142,18 +142,19 @@ class _NoQuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: AppTheme.cardDecoration(),
-      child: const Column(
+      decoration: colors.cardDecoration(),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.quiz_outlined, color: AppTheme.textSecondary, size: 48),
-          SizedBox(height: 10),
+          Icon(Icons.quiz_outlined, color: colors.textSecondary, size: 48),
+          const SizedBox(height: 10),
           Text(
             'Nenhuma questão foi fornecida para visualização.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+            style: TextStyle(color: colors.textSecondary, fontSize: 14),
           ),
         ],
       ),

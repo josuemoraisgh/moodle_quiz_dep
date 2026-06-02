@@ -5,15 +5,11 @@ import 'package:provider/provider.dart';
 import '../../core/config/quiz_runtime_config.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/quiz_nav_notifier.dart';
 import '../../core/utils/responsive.dart';
 import '../controllers/auth_controller.dart';
 
 /// Tela de autenticação — sempre a primeira tela do sistema.
-///
-/// Três opções:
-///   • Professor  — senha exclusiva, acesso total.
-///   • Aluno      — seleciona o nome + senha compartilhada.
-///   • Convidado  — acesso somente-leitura, sem senha.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -62,11 +58,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _navigateAfterLogin(AuthController auth) {
-    final runtime = context.read<QuizRuntimeConfig>();
     final user = auth.user!;
     if (user.isTeacher) {
       context.go(AppRouter.professorQuiz);
-    } else if (user.isGuest || runtime.singleQuestionByDependency) {
+    } else if (user.isGuest) {
       context.go(AppRouter.guestQuestion);
     } else {
       context.go(AppRouter.studentLobby);
@@ -75,9 +70,10 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+        decoration: BoxDecoration(gradient: colors.bgGradient),
         child: Center(
           child: SingleChildScrollView(
             padding: Responsive.horizontalPadding(context),
@@ -103,18 +99,18 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 16),
                       Text(
                         auth.settings.quizTitle,
-                        style: const TextStyle(
-                          color: AppTheme.textPrimary,
+                        style: TextStyle(
+                          color: colors.textPrimary,
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
                         ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Como deseja acessar?',
                         style: TextStyle(
-                            color: AppTheme.textSecondary, fontSize: 14),
+                            color: colors.textSecondary, fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 32),
@@ -123,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                       if (auth.isOnlineMode) ...[
                         TextFormField(
                           controller: _baseUrlCtrl,
-                          style: const TextStyle(color: AppTheme.textPrimary),
+                          style: TextStyle(color: colors.textPrimary),
                           decoration: const InputDecoration(
                             labelText: 'URL do Moodle',
                             prefixIcon: Icon(Icons.public_rounded),
@@ -132,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _nameCtrl,
-                          style: const TextStyle(color: AppTheme.textPrimary),
+                          style: TextStyle(color: colors.textPrimary),
                           decoration: const InputDecoration(
                             labelText: 'Usuário Moodle',
                             prefixIcon: Icon(Icons.person_outline),
@@ -150,12 +146,11 @@ class _LoginPageState extends State<LoginPage> {
                             labelText: 'Nome',
                             prefixIcon: Icon(Icons.person_outline),
                           ),
-                          dropdownColor: AppTheme.bgCard,
-                          style: const TextStyle(
-                              color: AppTheme.textPrimary, fontSize: 15),
-                          hint: const Text('Selecione…',
-                              style:
-                                  TextStyle(color: AppTheme.textSecondary)),
+                          dropdownColor: colors.bgCard,
+                          style: TextStyle(
+                              color: colors.textPrimary, fontSize: 15),
+                          hint: Text('Selecione…',
+                              style: TextStyle(color: colors.textSecondary)),
                           items: names
                               .map((n) => DropdownMenuItem(
                                     value: n,
@@ -167,7 +162,7 @@ class _LoginPageState extends State<LoginPage> {
                                               : Icons.person_rounded,
                                           color: n == _professorLabel
                                               ? AppTheme.accent
-                                              : AppTheme.textSecondary,
+                                              : colors.textSecondary,
                                           size: 18,
                                         ),
                                         const SizedBox(width: 8),
@@ -187,7 +182,7 @@ class _LoginPageState extends State<LoginPage> {
                       TextFormField(
                         controller: _passCtrl,
                         obscureText: _obscurePass,
-                        style: const TextStyle(color: AppTheme.textPrimary),
+                        style: TextStyle(color: colors.textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Senha',
                           prefixIcon: const Icon(Icons.lock_outline),
@@ -195,7 +190,7 @@ class _LoginPageState extends State<LoginPage> {
                             icon: Icon(_obscurePass
                                 ? Icons.visibility_off
                                 : Icons.visibility),
-                            color: AppTheme.textSecondary,
+                            color: colors.textSecondary,
                             onPressed: () =>
                                 setState(() => _obscurePass = !_obscurePass),
                           ),
@@ -242,19 +237,21 @@ class _LoginPageState extends State<LoginPage> {
                       // ── Divisor ───────────────────────────────────────────
                       Row(
                         children: [
-                          const Expanded(
-                              child: Divider(color: AppTheme.textSecondary)),
+                          Expanded(
+                              child:
+                                  Divider(color: colors.textSecondary)),
                           Padding(
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 12),
                             child: Text('ou',
                                 style: TextStyle(
-                                    color: AppTheme.textSecondary
+                                    color: colors.textSecondary
                                         .withValues(alpha: 0.6),
                                     fontSize: 12)),
                           ),
-                          const Expanded(
-                              child: Divider(color: AppTheme.textSecondary)),
+                          Expanded(
+                              child:
+                                  Divider(color: colors.textSecondary)),
                         ],
                       ),
 
@@ -270,9 +267,9 @@ class _LoginPageState extends State<LoginPage> {
                           label: const Text('Entrar como Convidado',
                               style: TextStyle(fontSize: 14)),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.textSecondary,
-                            side: const BorderSide(
-                                color: AppTheme.textSecondary, width: 0.5),
+                            foregroundColor: colors.textSecondary,
+                            side: BorderSide(
+                                color: colors.textSecondary, width: 0.5),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
                           ),
@@ -280,21 +277,10 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      // ── Link de configuração (visível ao professor) ────────
-                      if (!auth.isOnlineMode) ...[
-                        const SizedBox(height: 20),
-                        TextButton.icon(
-                          onPressed: () =>
-                              context.go(AppRouter.professorSetup),
-                          icon: const Icon(Icons.settings_rounded,
-                              size: 16, color: AppTheme.textSecondary),
-                          label: const Text(
-                            'Configurar quiz (Professor)',
-                            style: TextStyle(
-                                color: AppTheme.textSecondary, fontSize: 13),
-                          ),
-                        ),
-                      ],
+                      const SizedBox(height: 16),
+
+                      // ── Alternador de tema ────────────────────────────────
+                      _ThemeToggleButton(),
                     ],
                   );
                 },
@@ -303,6 +289,29 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ThemeToggleButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder(
+      valueListenable: quizThemeModeNotifier,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
+        return IconButton(
+          tooltip: isDark ? 'Tema claro' : 'Tema escuro',
+          icon: Icon(
+            isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+            color: context.appColors.textSecondary,
+          ),
+          onPressed: () {
+            quizThemeModeNotifier.value =
+                isDark ? ThemeMode.light : ThemeMode.dark;
+          },
+        );
+      },
     );
   }
 }

@@ -28,6 +28,9 @@ class LocalUserEntity extends Equatable {
   /// Convidado: acesso somente-leitura sem cadastro.
   bool get isGuest => id == -1 && !isTeacher;
 
+  /// Aluno: usuário autenticado que aguarda questões liberadas pelo professor.
+  bool get isStudent => !isTeacher && !isGuest;
+
   @override
   List<Object?> get props => [
         id,
